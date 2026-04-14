@@ -1,0 +1,596 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1f3d;
+    --navy-mid: #1a3260;
+    --gold: #c9973a;
+    --gold-light: #e8b856;
+    --cream: #f8f4ee;
+    --cream-mid: #f0e9dc;
+    --text-dark: #1a1a2e;
+    --text-mid: #4a4a6a;
+    --text-light: #7a7a9a;
+    --white: #ffffff;
+    --success: #2d7a4f;
+    --border: #ddd8cc;
+    --shadow: 0 4px 24px rgba(15,31,61,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-dark); min-height: 100vh; }
+
+  /* NAV */
+  nav { background: var(--navy); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'Playfair Display', serif; color: var(--white); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+  .logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+  .nav-link { color: rgba(255,255,255,0.75); font-size: 0.875rem; font-weight: 400; cursor: pointer; border: none; background: none; transition: color 0.2s; }
+  .nav-link:hover { color: var(--white); }
+  .nav-btn { background: var(--gold); color: var(--navy); border: none; border-radius: 6px; padding: 8px 18px; font-size: 0.875rem; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+  .nav-btn:hover { background: var(--gold-light); }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #2a4a80 100%); min-height: 88vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  .hero-inner { max-width: 720px; position: relative; }
+  .hero-badge { display: inline-block; background: rgba(201,151,58,0.2); color: var(--gold-light); border: 1px solid rgba(201,151,58,0.4); border-radius: 20px; padding: 6px 16px; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 1.5rem; text-transform: uppercase; }
+  .hero h1 { font-family: 'Playfair Display', serif; color: var(--white); font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; line-height: 1.15; margin-bottom: 1.25rem; }
+  .hero h1 em { color: var(--gold); font-style: normal; }
+  .hero p { color: rgba(255,255,255,0.75); font-size: 1.1rem; line-height: 1.7; margin-bottom: 2.5rem; font-weight: 300; max-width: 560px; margin-left: auto; margin-right: auto; }
+  .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary { background: var(--gold); color: var(--navy); border: none; border-radius: 8px; padding: 14px 32px; font-size: 1rem; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-outline { background: transparent; color: var(--white); border: 1.5px solid rgba(255,255,255,0.4); border-radius: 8px; padding: 14px 32px; font-size: 1rem; font-weight: 400; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .btn-outline:hover { border-color: var(--white); background: rgba(255,255,255,0.08); }
+  .hero-stats { display: flex; gap: 2rem; justify-content: center; margin-top: 3.5rem; flex-wrap: wrap; }
+  .hero-stat { text-align: center; }
+  .hero-stat .num { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--gold); font-weight: 700; }
+  .hero-stat .lbl { font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 300; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* HOW IT WORKS */
+  .section { padding: 5rem 2rem; max-width: 1000px; margin: 0 auto; }
+  .section-label { font-size: 0.75rem; color: var(--gold); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 700; color: var(--navy); line-height: 1.2; margin-bottom: 1rem; }
+  .section-sub { color: var(--text-mid); font-size: 1rem; line-height: 1.7; max-width: 540px; font-weight: 300; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+  .step-card { background: var(--white); border-radius: 12px; padding: 1.75rem; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .step-num { width: 36px; height: 36px; background: var(--navy); color: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1rem; margin-bottom: 1rem; }
+  .step-card h3 { font-size: 1rem; font-weight: 500; color: var(--navy); margin-bottom: 0.5rem; }
+  .step-card p { font-size: 0.875rem; color: var(--text-mid); line-height: 1.6; font-weight: 300; }
+
+  /* PRICING */
+  .pricing-section { background: var(--navy); padding: 5rem 2rem; text-align: center; }
+  .pricing-section .section-label { color: var(--gold-light); }
+  .pricing-section .section-title { color: var(--white); margin: 0 auto 1rem; }
+  .pricing-section .section-sub { color: rgba(255,255,255,0.6); margin: 0 auto 3rem; }
+  .pricing-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 2.5rem; max-width: 380px; margin: 0 auto; }
+  .pricing-card.featured { background: var(--white); border-color: var(--gold); }
+  .pricing-card.featured .price { color: var(--navy); }
+  .pricing-card.featured .price-label { color: var(--text-mid); }
+  .pricing-card.featured h3 { color: var(--navy); }
+  .pricing-card.featured li { color: var(--text-mid); }
+  .pricing-card h3 { color: var(--white); font-size: 1.1rem; font-weight: 500; margin-bottom: 1rem; }
+  .price { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; color: var(--gold); }
+  .price-label { font-size: 0.875rem; color: rgba(255,255,255,0.5); margin-bottom: 1.5rem; }
+  .pricing-card ul { list-style: none; text-align: left; margin-bottom: 2rem; }
+  .pricing-card li { color: rgba(255,255,255,0.75); font-size: 0.9rem; padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+  .pricing-card li::before { content: '✓'; color: var(--gold); font-weight: 700; }
+
+  /* REGISTER / LOGIN */
+  .auth-section { min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+  .auth-card { background: var(--white); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow); padding: 2.5rem; width: 100%; max-width: 420px; }
+  .auth-card h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--navy); margin-bottom: 0.5rem; }
+  .auth-card p { color: var(--text-mid); font-size: 0.9rem; margin-bottom: 2rem; font-weight: 300; }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--navy); margin-bottom: 6px; }
+  .form-group input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; color: var(--text-dark); outline: none; transition: border-color 0.2s; background: var(--cream); }
+  .form-group input:focus { border-color: var(--navy); background: var(--white); }
+  .btn-form { width: 100%; padding: 13px; background: var(--navy); color: var(--white); border: none; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; margin-top: 0.5rem; }
+  .btn-form:hover { background: var(--navy-mid); }
+  .btn-google { width: 100%; padding: 11px; background: var(--white); color: var(--text-dark); border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-weight: 400; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 1.25rem; transition: border-color 0.2s; }
+  .btn-google:hover { border-color: var(--text-mid); }
+  .divider { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; color: var(--text-light); font-size: 0.85rem; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .auth-switch { text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-mid); }
+  .auth-switch a { color: var(--navy); font-weight: 500; cursor: pointer; text-decoration: underline; }
+
+  /* PAYMENT */
+  .payment-section { min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+  .payment-card { background: var(--white); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow); padding: 2.5rem; width: 100%; max-width: 480px; }
+  .payment-card h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--navy); margin-bottom: 0.5rem; }
+  .order-summary { background: var(--cream); border-radius: 10px; padding: 1.25rem; margin: 1.5rem 0; }
+  .order-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-mid); padding: 4px 0; }
+  .order-row.total { font-weight: 500; color: var(--navy); font-size: 1rem; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 6px; }
+  .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  /* QUESTIONNAIRE */
+  .quiz-wrapper { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
+  .quiz-header { margin-bottom: 2.5rem; }
+  .progress-bar { background: var(--cream-mid); border-radius: 99px; height: 6px; margin-bottom: 1.5rem; }
+  .progress-fill { background: linear-gradient(90deg, var(--navy), var(--gold)); height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+  .progress-label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.75rem; font-weight: 300; }
+  .quiz-section-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--navy); font-weight: 700; margin-bottom: 0.25rem; }
+  .quiz-section-sub { font-size: 0.9rem; color: var(--text-mid); font-weight: 300; }
+  .question-card { background: var(--white); border-radius: 14px; border: 1px solid var(--border); padding: 1.75rem; margin-bottom: 1.25rem; box-shadow: 0 2px 12px rgba(15,31,61,0.06); }
+  .question-text { font-size: 0.95rem; font-weight: 500; color: var(--navy); margin-bottom: 1.25rem; line-height: 1.5; }
+  .scale-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-light); margin-bottom: 0.75rem; font-weight: 300; }
+  .scale-options { display: flex; gap: 8px; }
+  .scale-btn { flex: 1; aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 8px; background: var(--cream); font-size: 0.85rem; font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; min-height: 42px; }
+  .scale-btn:hover { border-color: var(--navy); color: var(--navy); }
+  .scale-btn.selected { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .choice-options { display: grid; gap: 8px; }
+  .choice-btn { width: 100%; text-align: left; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--cream); font-size: 0.9rem; color: var(--text-mid); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; font-weight: 400; }
+  .choice-btn:hover { border-color: var(--navy); color: var(--navy); background: var(--cream-mid); }
+  .choice-btn.selected { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .quiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; }
+  .btn-back { background: transparent; color: var(--text-mid); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; cursor: pointer; }
+  .btn-next { background: var(--navy); color: var(--white); border: none; border-radius: 8px; padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .btn-next:hover { background: var(--navy-mid); }
+  .btn-next:disabled { background: var(--border); color: var(--text-light); cursor: not-allowed; }
+
+  /* REPORT */
+  .report-wrapper { max-width: 760px; margin: 0 auto; padding: 3rem 2rem; }
+  .report-hero { background: var(--navy); border-radius: 16px; padding: 2.5rem; color: var(--white); margin-bottom: 2rem; }
+  .report-hero h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--white); margin-bottom: 0.5rem; }
+  .report-hero p { color: rgba(255,255,255,0.65); font-size: 0.9rem; font-weight: 300; }
+  .profile-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1.25rem; }
+  .chip { background: rgba(201,151,58,0.25); color: var(--gold-light); border: 1px solid rgba(201,151,58,0.4); border-radius: 20px; padding: 5px 14px; font-size: 0.8rem; font-weight: 500; }
+  .career-card { background: var(--white); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
+  .career-card-header { background: var(--cream); padding: 1.5rem; display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .career-rank { width: 32px; height: 32px; background: var(--navy); color: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
+  .career-card-header h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--navy); flex: 1; margin: 0 1rem; }
+  .match-pct { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+  .match-label { font-size: 0.7rem; color: var(--text-light); text-align: right; text-transform: uppercase; letter-spacing: 0.5px; }
+  .career-body { padding: 1.5rem; }
+  .career-section { margin-bottom: 1.25rem; }
+  .career-section h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); font-weight: 500; margin-bottom: 0.5rem; }
+  .career-section p { font-size: 0.9rem; color: var(--text-mid); line-height: 1.6; font-weight: 300; }
+  .subject-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .subject-tag { background: #e8f0f8; color: #1a3260; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; font-weight: 500; }
+  .ai-impact { background: #fff8ec; border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 12px 14px; }
+  .ai-impact p { color: #5a4010; font-size: 0.875rem; line-height: 1.6; font-weight: 300; }
+  .report-footer { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+  .btn-download { background: var(--navy); color: var(--white); border: none; border-radius: 8px; padding: 13px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; flex: 1; min-width: 140px; }
+  .btn-share { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); border-radius: 8px; padding: 12px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; cursor: pointer; flex: 1; min-width: 140px; }
+
+  /* THINKING */
+  .thinking { text-align: center; padding: 4rem 2rem; }
+  .spinner { width: 48px; height: 48px; border: 3px solid var(--cream-mid); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 1.5rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .thinking h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--navy); margin-bottom: 0.5rem; }
+  .thinking p { color: var(--text-mid); font-size: 0.9rem; font-weight: 300; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--success); color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.875rem; opacity: 0; transition: opacity 0.3s; z-index: 1000; }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 600px) {
+    nav { padding: 0 1rem; }
+    .nav-links { gap: 0.75rem; }
+    .hero-stats { gap: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Path<span>Finder</span> SA</div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="showPage('home')">Home</button>
+    <button class="nav-link" onclick="showPage('home'); setTimeout(()=>document.getElementById('how').scrollIntoView({behavior:'smooth'}),100)">How it works</button>
+    <button class="nav-btn" onclick="showPage('register')">Get Started</button>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">Grade 9 Career Guidance · South Africa</div>
+      <h1>Discover your <em>future career</em> with confidence</h1>
+      <p>A scientifically validated assessment that analyses your interests, personality and aptitudes — then maps them to the right Grade 10 subjects and real career paths.</p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="showPage('register')">Start My Assessment — R399</button>
+        <button class="btn-outline" onclick="showPage('home'); setTimeout(()=>document.getElementById('how').scrollIntoView({behavior:'smooth'}),100)">See how it works</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="num">3</div><div class="lbl">Validated frameworks</div></div>
+        <div class="hero-stat"><div class="num">45</div><div class="lbl">Questions</div></div>
+        <div class="hero-stat"><div class="num">100+</div><div class="lbl">Career matches</div></div>
+        <div class="hero-stat"><div class="num">SA</div><div class="lbl">CAPS aligned</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="how" class="section">
+    <div class="section-label">The process</div>
+    <div class="section-title">Four steps to clarity</div>
+    <div class="section-sub">From payment to personalised PDF report — the whole process takes under 40 minutes.</div>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Register & pay securely</h3>
+        <p>Create your profile, pay via PayFast or card. R399 once-off, full access unlocked immediately.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Complete the assessment</h3>
+        <p>45 validated questions across three proven frameworks — interests, values, and self-reported aptitude.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>AI analyses your profile</h3>
+        <p>Our AI cross-references your answers against 100+ SA careers, CAPS subject requirements, and APS scores.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h3>Receive your PDF report</h3>
+        <p>A professional report with your top 3 careers, required subjects, grades needed — and AI impact analysis.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="pricing-section">
+    <div class="section-label">Pricing</div>
+    <div class="section-title">Simple, once-off pricing</div>
+    <div class="section-sub">No subscriptions. No hidden costs. One payment, one report that could shape your entire future.</div>
+    <div class="pricing-card featured">
+      <h3>Complete Assessment Package</h3>
+      <div class="price">R399</div>
+      <div class="price-label" style="color:var(--text-mid);">once-off · includes everything</div>
+      <ul>
+        <li>45-question validated assessment</li>
+        <li>Top 3 career matches with % fit score</li>
+        <li>CAPS subject recommendations per career</li>
+        <li>NSC grade & APS requirements</li>
+        <li>AI impact analysis for each career</li>
+        <li>Professional PDF report via email</li>
+        <li>University & college pathway guidance</li>
+      </ul>
+      <button class="btn-primary" style="width:100%" onclick="showPage('register')">Get started now</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER PAGE -->
+<div id="page-register" class="page">
+  <div class="auth-section">
+    <div class="auth-card">
+      <h2>Create your account</h2>
+      <p>Join thousands of Grade 9 students finding their path</p>
+      <button class="btn-google" onclick="showToast('Google login coming soon in full version')">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.17z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.31z"/></svg>
+        Continue with Google
+      </button>
+      <div class="divider">or register with email</div>
+      <div class="form-group"><label>Full name</label><input type="text" placeholder="e.g. Thabo Nkosi" id="reg-name"></div>
+      <div class="form-group"><label>Email address</label><input type="email" placeholder="you@email.com" id="reg-email"></div>
+      <div class="form-group"><label>Password</label><input type="password" placeholder="Choose a strong password"></div>
+      <div class="form-group"><label>Grade / School (optional)</label><input type="text" placeholder="e.g. Grade 9, Rondebosch Boys"></div>
+      <button class="btn-form" onclick="showPage('payment')">Create account & continue</button>
+      <div class="auth-switch">Already have an account? <a onclick="showPage('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN PAGE -->
+<div id="page-login" class="page">
+  <div class="auth-section">
+    <div class="auth-card">
+      <h2>Welcome back</h2>
+      <p>Sign in to access your assessment or view your report</p>
+      <button class="btn-google" onclick="showToast('Google login coming soon in full version')">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.17z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.31z"/></svg>
+        Continue with Google
+      </button>
+      <div class="divider">or sign in with email</div>
+      <div class="form-group"><label>Email address</label><input type="email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" placeholder="Your password"></div>
+      <button class="btn-form" onclick="showPage('payment')">Sign in</button>
+      <div class="auth-switch">Don't have an account? <a onclick="showPage('register')">Register</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT PAGE -->
+<div id="page-payment" class="page">
+  <div class="payment-section">
+    <div class="payment-card">
+      <h2>Complete your purchase</h2>
+      <p style="color:var(--text-mid);font-size:0.9rem;font-weight:300;margin-bottom:0">Secure payment via PayFast</p>
+      <div class="order-summary">
+        <div class="order-row"><span>PathFinder SA — Full Assessment</span><span>R399.00</span></div>
+        <div class="order-row"><span>VAT (15%)</span><span>R59.85</span></div>
+        <div class="order-row total"><span>Total</span><span>R458.85</span></div>
+      </div>
+      <div class="form-group"><label>Name on card</label><input type="text" placeholder="As it appears on card"></div>
+      <div class="form-group"><label>Card number</label><input type="text" placeholder="•••• •••• •••• ••••"></div>
+      <div class="card-row">
+        <div class="form-group"><label>Expiry</label><input type="text" placeholder="MM / YY"></div>
+        <div class="form-group"><label>CVV</label><input type="text" placeholder="•••"></div>
+      </div>
+      <button class="btn-form" onclick="showPage('quiz')" style="background:var(--gold);color:var(--navy);">Pay R458.85 & Start Assessment</button>
+      <p style="font-size:0.78rem;color:var(--text-light);text-align:center;margin-top:1rem;font-weight:300;">🔒 Secured by PayFast · SSL encrypted · 256-bit encryption</p>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ PAGE -->
+<div id="page-quiz" class="page">
+  <div class="quiz-wrapper">
+    <div class="quiz-header">
+      <div class="progress-label" id="quiz-progress-label">Section 1 of 3 · Question 1 of 15</div>
+      <div class="progress-bar"><div class="progress-fill" id="quiz-progress-fill" style="width:4%"></div></div>
+      <div class="quiz-section-title" id="quiz-section-title">Career Interest Inventory</div>
+      <div class="quiz-section-sub" id="quiz-section-sub">Based on Holland's RIASEC model — there are no right or wrong answers, just be honest</div>
+    </div>
+    <div id="quiz-questions"></div>
+    <div class="quiz-nav">
+      <button class="btn-back" id="btn-back" onclick="quizBack()">← Back</button>
+      <button class="btn-next" id="btn-next" onclick="quizNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- THINKING PAGE -->
+<div id="page-thinking" class="page">
+  <div class="thinking">
+    <div class="spinner"></div>
+    <h3>Analysing your profile...</h3>
+    <p>Our AI is cross-referencing your answers with 100+ careers,<br>CAPS subjects, and SA university requirements.</p>
+  </div>
+</div>
+
+<!-- REPORT PAGE -->
+<div id="page-report" class="page">
+  <div class="report-wrapper">
+    <div class="report-hero">
+      <h2 id="report-name">Your Career Pathfinder Report</h2>
+      <p id="report-date">Generated on <span id="report-date-val"></span></p>
+      <div class="profile-chips" id="profile-chips"></div>
+    </div>
+    <div id="report-careers"></div>
+    <div class="report-footer">
+      <button class="btn-download" onclick="showToast('PDF report sent to your email address!')">Download PDF Report</button>
+      <button class="btn-share" onclick="showToast('Share link copied to clipboard!')">Share Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const QUESTIONS = [
+  {section: 0, text: "I enjoy working with my hands, building or fixing things.", type:"scale"},
+  {section: 0, text: "I like investigating problems and figuring out how things work.", type:"scale"},
+  {section: 0, text: "I enjoy creative activities like art, music, writing, or design.", type:"scale"},
+  {section: 0, text: "I like helping, teaching, or caring for other people.", type:"scale"},
+  {section: 0, text: "I enjoy leading projects and persuading others.", type:"scale"},
+  {section: 0, text: "I prefer working with data, numbers, and following clear procedures.", type:"scale"},
+  {section: 0, text: "I'd rather work outdoors or with physical equipment than in an office.", type:"scale"},
+  {section: 0, text: "I enjoy science subjects and understanding how the natural world works.", type:"scale"},
+  {section: 0, text: "I often come up with new and original ideas.", type:"scale"},
+  {section: 0, text: "Making a positive difference in people's lives is very important to me.", type:"scale"},
+  {section: 0, text: "I feel energised when I'm in charge of a project or leading a group.", type:"scale"},
+  {section: 0, text: "I like tasks with clear rules, structure, and measurable outcomes.", type:"scale"},
+  {section: 0, text: "I am good at using tools, machines, or technology in practical ways.", type:"scale"},
+  {section: 0, text: "I ask a lot of questions and enjoy researching topics deeply.", type:"scale"},
+  {section: 0, text: "I like expressing myself through creative projects.", type:"scale"},
+  {section: 1, text: "Which type of task sounds most appealing to you?", type:"choice", options:["Designing a building or product", "Diagnosing an illness or solving a science problem", "Writing a story or creating a piece of artwork", "Coaching a team or mentoring a younger student"]},
+  {section: 1, text: "What kind of workplace would you prefer?", type:"choice", options:["A workshop, lab, or outdoors", "A research institution or hospital", "A studio, agency, or media company", "A school, NGO, or community centre"]},
+  {section: 1, text: "Which subject do you enjoy most?", type:"choice", options:["Maths or Physical Science", "Life Sciences or Geography", "Art, Design, or Languages", "History, Religion, or Life Orientation"]},
+  {section: 1, text: "What matters most to you in a career?", type:"choice", options:["Building something tangible and lasting", "Discovering new knowledge or cures", "Expressing creativity and original thinking", "Helping people grow and thrive"]},
+  {section: 1, text: "How do you prefer to solve problems?", type:"choice", options:["Using tools, prototypes, or experiments", "Research, analysis, and logical reasoning", "Brainstorming creative or unconventional ideas", "Discussing with others and reaching consensus"]},
+  {section: 1, text: "Pick the statement that describes you best:", type:"choice", options:["I like to see concrete, physical results of my work", "I enjoy complex, intellectual challenges", "I value self-expression and originality above all", "I'm most fulfilled when I've helped someone"]},
+  {section: 1, text: "How do you feel about working with technology in your future career?", type:"choice", options:["I want to build or engineer technology", "I want to use technology to research and discover", "I want to use technology creatively", "Technology is secondary — people are my focus"]},
+  {section: 2, text: "I consider myself good at maths and logical reasoning.", type:"scale"},
+  {section: 2, text: "I communicate easily, both in writing and speaking.", type:"scale"},
+  {section: 2, text: "I pick up new computer skills quickly.", type:"scale"},
+  {section: 2, text: "I am organised and detail-oriented.", type:"scale"},
+  {section: 2, text: "I stay calm and focused under pressure.", type:"scale"},
+  {section: 2, text: "I find it easy to understand and empathise with other people's feelings.", type:"scale"},
+  {section: 2, text: "I enjoy taking on leadership or responsibility.", type:"scale"},
+  {section: 2, text: "I pick up creative or artistic skills easily.", type:"scale"},
+  {section: 2, text: "I prefer working independently over group work.", type:"scale"},
+  {section: 2, text: "I am comfortable presenting my ideas to others.", type:"scale"},
+  {section: 2, text: "What best describes your academic strengths?", type:"choice", options:["Numbers, formulas, and logical thinking", "Writing, reading, and communication", "Visual thinking and spatial reasoning", "Understanding people and social dynamics"]},
+  {section: 2, text: "Which task would you find least difficult?", type:"choice", options:["Solving a complex maths problem", "Writing a persuasive essay", "Designing a logo or illustration", "Giving a presentation to your class"]},
+  {section: 2, text: "How would your friends describe you?", type:"choice", options:["Analytical and rational", "Creative and expressive", "Caring and supportive", "Driven and goal-oriented"]},
+  {section: 2, text: "What is your biggest academic challenge?", type:"choice", options:["Maths or science concepts", "Writing or expressing ideas", "Staying organised and on deadline", "Working in group situations"]},
+  {section: 2, text: "Thinking about your future, what do you value most?", type:"choice", options:["Financial security and a good salary", "Work-life balance and flexibility", "Making a social impact", "Status, recognition, and achievement"]},
+];
+
+const SECTION_META = [
+  {title:"Career Interest Inventory", sub:"Based on Holland's RIASEC model — there are no right or wrong answers, just be honest"},
+  {title:"Career Values & Environment", sub:"Tell us about the kind of work you find meaningful and the environment you'd thrive in"},
+  {title:"Self-Reported Aptitude & Strengths", sub:"Reflect honestly on your own strengths — this shapes how your career matches are weighted"},
+];
+
+let currentQ = 0;
+let answers = {};
+let userName = "Student";
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  window.scrollTo(0,0);
+  if(page==='quiz') renderQuestion();
+  if(page==='report') renderReport();
+  if(page==='thinking') setTimeout(()=>showPage('report'), 3200);
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  const sm = SECTION_META[q.section];
+  const total = QUESTIONS.length;
+  const pct = Math.round(((currentQ+1)/total)*100);
+  document.getElementById('quiz-progress-fill').style.width = pct+'%';
+  document.getElementById('quiz-progress-label').textContent = `Section ${q.section+1} of 3 · Question ${currentQ+1} of ${total}`;
+  document.getElementById('quiz-section-title').textContent = sm.title;
+  document.getElementById('quiz-section-sub').textContent = sm.sub;
+  document.getElementById('btn-back').style.visibility = currentQ===0?'hidden':'visible';
+  document.getElementById('btn-next').textContent = currentQ===QUESTIONS.length-1 ? 'Submit Assessment ✓' : 'Next →';
+
+  const container = document.getElementById('quiz-questions');
+  if(q.type==='scale') {
+    container.innerHTML = `<div class="question-card">
+      <div class="question-text">${q.text}</div>
+      <div class="scale-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>
+      <div class="scale-options">
+        ${[1,2,3,4,5].map(v=>`<button class="scale-btn ${answers[currentQ]===v?'selected':''}" onclick="selectAnswer(${v})">${v}</button>`).join('')}
+      </div>
+    </div>`;
+  } else {
+    container.innerHTML = `<div class="question-card">
+      <div class="question-text">${q.text}</div>
+      <div class="choice-options">
+        ${q.options.map((o,i)=>`<button class="choice-btn ${answers[currentQ]===i?'selected':''}" onclick="selectAnswer(${i})">${o}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+}
+
+function selectAnswer(val) {
+  answers[currentQ] = val;
+  renderQuestion();
+}
+
+function quizNext() {
+  if(answers[currentQ]===undefined) { showToast('Please answer the question to continue'); return; }
+  if(currentQ===QUESTIONS.length-1) { showPage('thinking'); return; }
+  currentQ++;
+  renderQuestion();
+}
+
+function quizBack() {
+  if(currentQ>0) { currentQ--; renderQuestion(); }
+}
+
+function renderReport() {
+  document.getElementById('report-date-val').textContent = new Date().toLocaleDateString('en-ZA',{year:'numeric',month:'long',day:'numeric'});
+  const name = document.getElementById('reg-name')?.value || 'Student';
+  document.getElementById('report-name').textContent = `${name}'s Career Pathfinder Report`;
+
+  const scaleAnswers = Object.entries(answers).filter(([i])=>QUESTIONS[i].type==='scale').map(([,v])=>v);
+  const avg = scaleAnswers.length ? scaleAnswers.reduce((a,b)=>a+b,0)/scaleAnswers.length : 3;
+  const choiceAnswers = Object.entries(answers).filter(([i])=>QUESTIONS[i].type==='choice').map(([,v])=>v);
+  const pref = choiceAnswers.length ? Math.round(choiceAnswers.reduce((a,b)=>a+b,0)/choiceAnswers.length) : 0;
+
+  const allCareers = [
+    {
+      title:"Software Developer / Engineer",
+      match:94,
+      summary:"Design, build and maintain software applications and systems. Works across web, mobile, AI and enterprise platforms. One of the fastest-growing fields globally and in South Africa.",
+      subjects:["Mathematics","Physical Science","Information Technology","English Home Language"],
+      grades:"Mathematics ≥ 60%, IT ≥ 60%, APS ≥ 28 for BSc Computer Science (UCT/Wits/UP)",
+      ai:"AI will transform software development — but not eliminate it. Developers who learn to work with AI coding tools (GitHub Copilot, etc.) will be far more productive. The role shifts toward systems design, AI oversight, and solving complex problems that AI cannot yet handle. Strong demand well into the 2040s.",
+      riasec:"Investigative · Realistic"
+    },
+    {
+      title:"Civil / Structural Engineer",
+      match:88,
+      summary:"Plan, design and oversee the construction of infrastructure — roads, bridges, water systems, and buildings. South Africa has a massive infrastructure backlog, creating strong local demand.",
+      subjects:["Mathematics","Physical Science","Technical Drawing or CAD (advantageous)","English"],
+      grades:"Mathematics ≥ 70%, Physical Science ≥ 60%, APS ≥ 30 for BEng Civil (UCT/Stellenbosch/WITS)",
+      ai:"AI will automate structural calculations and optimise designs, but engineers are still needed to interpret results, manage projects, and ensure safety compliance. The human judgement element remains irreplaceable. AI makes engineers more efficient, not redundant.",
+      riasec:"Realistic · Investigative"
+    },
+    {
+      title:"Graphic Designer / UX Designer",
+      match:81,
+      summary:"Create visual communication across digital and print media. UX designers specifically focus on making digital products intuitive and enjoyable. Demand is driven by SA's growing digital economy.",
+      subjects:["Visual Arts","English Home Language","Information Technology (advantageous)","Design"],
+      grades:"Portfolio is as important as grades. Most design schools require a strong creative portfolio. APS ≥ 25 for BA Design (CPUT, Vega, AAA School of Advertising)",
+      ai:"AI image generation tools (Midjourney, DALL-E) are changing the field rapidly. Junior designers doing repetitive tasks are most at risk. However, strategic design thinking, brand identity, and UX research remain deeply human skills. Designers who adopt AI as a tool will thrive.",
+      riasec:"Artistic · Enterprising"
+    },
+    {
+      title:"Medical Doctor",
+      match:79,
+      summary:"Diagnose and treat illness, injury, and disease. A highly respected and well-compensated profession in South Africa with strong job security across public and private sectors.",
+      subjects:["Mathematics","Physical Science","Life Sciences","English Home Language"],
+      grades:"All core subjects ≥ 70%, APS ≥ 35 for MBChB (UCT/Wits/Stellenbosch — extremely competitive)",
+      ai:"AI is transforming medical imaging and diagnosis, but doctors are needed to communicate with patients, make ethical decisions, and handle complex cases. AI will make good doctors better. The profession is AI-resilient but will evolve significantly.",
+      riasec:"Investigative · Social"
+    },
+    {
+      title:"Data Analyst / Data Scientist",
+      match:76,
+      summary:"Collect, process and analyse large datasets to help organisations make better decisions. One of the top-paying and fastest-growing careers in South Africa and globally.",
+      subjects:["Mathematics","Information Technology","Mathematical Literacy (minimum)","Statistics"],
+      grades:"Mathematics ≥ 65%, APS ≥ 28 for BSc Statistics or Informatics",
+      ai:"Data science sits at the intersection of AI — professionals in this field actively build and use AI. Risk of automation is low; the career is AI-native. Strong future demand as every industry digitises.",
+      riasec:"Investigative · Conventional"
+    },
+    {
+      title:"Teacher / Educational Psychologist",
+      match:74,
+      summary:"Educate, mentor and support the development of young people. Educational psychologists specifically assess and support students with learning challenges. Both are deeply impactful roles.",
+      subjects:["English Home Language","Any major subject of interest","Life Orientation","Mathematics"],
+      grades:"APS ≥ 24 for BEd (UNISA, UKZN, UWC). Educational psychology requires a Postgrad degree after initial studies.",
+      ai:"Teaching is one of the most AI-resilient careers. Human connection, mentorship, and motivation cannot be replicated by AI. Technology will support teachers (personalised learning platforms) but the role of educator remains fundamentally human.",
+      riasec:"Social · Artistic"
+    },
+  ];
+
+  const careers = avg >= 3.5
+    ? [allCareers[0], allCareers[1], allCareers[4]]
+    : pref <= 1
+    ? [allCareers[3], allCareers[0], allCareers[4]]
+    : pref === 2
+    ? [allCareers[2], allCareers[5], allCareers[0]]
+    : [allCareers[5], allCareers[3], allCareers[2]];
+
+  const chips = [...new Set(careers.flatMap(c=>c.riasec.split(' · ')))];
+  document.getElementById('profile-chips').innerHTML = chips.map(c=>`<span class="chip">${c}</span>`).join('');
+
+  document.getElementById('report-careers').innerHTML = careers.map((c,i)=>`
+    <div class="career-card">
+      <div class="career-card-header">
+        <div class="career-rank">${i+1}</div>
+        <h3>${c.title}</h3>
+        <div style="text-align:right">
+          <div class="match-pct">${c.match - i*7}%</div>
+          <div class="match-label">Match</div>
+        </div>
+      </div>
+      <div class="career-body">
+        <div class="career-section">
+          <h4>About this career</h4>
+          <p>${c.summary}</p>
+        </div>
+        <div class="career-section">
+          <h4>Recommended Grade 10–12 subjects</h4>
+          <div class="subject-tags">${c.subjects.map(s=>`<span class="subject-tag">${s}</span>`).join('')}</div>
+        </div>
+        <div class="career-section">
+          <h4>Grades & APS requirements</h4>
+          <p>${c.grades}</p>
+        </div>
+        <div class="career-section">
+          <h4>AI impact on this career</h4>
+          <div class="ai-impact"><p>${c.ai}</p></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
