@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Nav from '../components/Nav'
+import GoogleSignInButton from '../components/GoogleSignInButton'
 
 export default function Register() {
   const router = useRouter()
@@ -45,6 +46,14 @@ export default function Register() {
           <h2 style={{ fontFamily: 'Georgia,serif', fontSize: '1.8rem', color: 'var(--navy)', marginBottom: '0.5rem' }}>Create your account</h2>
           <p style={{ color: 'var(--text-mid)', fontSize: '0.9rem', marginBottom: '1.75rem', fontWeight: 300 }}>Join thousands of Grade 9 students finding their path</p>
 
+          <GoogleSignInButton label="Register with Google" />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.25rem 0', color: 'var(--text-light)', fontSize: '0.85rem' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            or register with email
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
           <form onSubmit={handleSubmit}>
             {[
               { label: 'Full name', key: 'fullName', type: 'text', placeholder: 'e.g. Thabo Nkosi', required: true },
@@ -76,6 +85,7 @@ export default function Register() {
               {loading ? 'Creating account...' : 'Create account & continue'}
             </button>
           </form>
+
 
           <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-mid)' }}>
             Already have an account? <Link href="/login">Sign in</Link>
