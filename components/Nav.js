@@ -39,8 +39,8 @@ export default function Nav() {
 
         {user ? (
           <>
-            <Link href="/assessment" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.875rem', textDecoration: 'none' }}>
-              My Assessment
+            <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.875rem', textDecoration: 'none' }}>
+              My Dashboard
             </Link>
             <button onClick={logout} style={{
               background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none',
