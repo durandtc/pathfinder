@@ -14,7 +14,7 @@ export default function Payment() {
   const total = Math.round(price * (1 + vat / 100))
 
   useEffect(() => {
-    const u = localStorage.getItem('pf_user')
+    const u = localStorage.getItem('pmp_user')
     if (!u) { router.push('/register'); return }
     setUser(JSON.parse(u))
   }, [])
@@ -49,7 +49,7 @@ export default function Payment() {
 
   return (
     <>
-      <Head><title>Payment — PathFinder SA</title></Head>
+      <Head><title>Payment — PickMyPath</title></Head>
       <Nav />
       <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem' }}>
         <div style={{ background: 'var(--white)', borderRadius: 16, border: '1px solid var(--border)', boxShadow: 'var(--shadow)', padding: '2.5rem', width: '100%', maxWidth: 480 }}>
@@ -58,7 +58,7 @@ export default function Payment() {
 
           <div style={{ background: 'var(--cream)', borderRadius: 10, padding: '1.25rem', margin: '1.5rem 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-mid)', padding: '4px 0' }}>
-              <span>PathFinder SA — Full Assessment</span><span>R{price}.00</span>
+              <span>PickMyPath — Full Assessment</span><span>R{price}.00</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-mid)', padding: '4px 0' }}>
               <span>VAT ({vat}%)</span><span>R{(price * vat / 100).toFixed(2)}</span>

@@ -4,7 +4,7 @@ import { generateCareerReport } from '../../../lib/generateReport'
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { userId, answers } = req.body
+  const { userId, answers, marks } = req.body
   if (!userId || !answers) return res.status(400).json({ error: 'userId and answers required' })
 
   const db = supabaseAdmin()
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const { data: user } = await db.from('users').select('*').eq('id', userId).single()
   if (!user) return res.status(404).json({ error: 'User not found' })
 
-  // Get or create assessment record
+  // Get or create assessment
   let { data: assessment } = await db
     .from('assessments').select('*').eq('user_id', userId)
     .eq('status', 'not_started').order('created_at', { ascending: false }).limit(1).maybeSingle()
@@ -35,35 +35,29 @@ export default async function handler(req, res) {
   await db.from('answers').delete().eq('assessment_id', assessment.id)
   await db.from('answers').insert(answerRows)
 
-  // Generate AI report
+  // Generate AI report — now passing marks as well
   let reportData, rawText
   try {
-    const result = await generateCareerReport(answers)
+    const result = await generateCareerReport(answers, marks || [])
     reportData = result.reportData
     rawText    = result.rawText
   } catch (err) {
     return res.status(500).json({ error: `AI generation failed: ${err.message}` })
   }
 
-  // Save report — no email, no PDF attachment needed
+  // Save report including marks data
   const { data: report } = await db.from('reports').insert({
-    assessment_id: assessment.id,
-    user_id: userId,
+    assessment_id:    assessment.id,
+    user_id:          userId,
     top_careers:      reportData,
     riasec_scores:    reportData.riasec_profile || {},
     ai_raw_response:  rawText,
     generated_at:     new Date().toISOString(),
-    email_sent:       false,   // email removed — report shown in browser
+    email_sent:       false,
   }).select().single()
 
-  // Mark assessment complete
-  await db.from('assessments').update({
-    status: 'completed', completed_at: new Date().toISOString(),
-  }).eq('id', assessment.id)
-
-  await db.from('audit_log').insert({
-    action: 'Assessment completed', details: `User ${user.email}`, performed_by: 'system',
-  })
+  await db.from('assessments').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', assessment.id)
+  await db.from('audit_log').insert({ action: 'Assessment completed', details: `User ${user.email} · marks provided: ${(marks||[]).filter(m=>m.subject).length}`, performed_by: 'system' })
 
   return res.status(200).json({ reportId: report.id })
 }

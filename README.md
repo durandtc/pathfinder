@@ -1,4 +1,4 @@
-# PathFinder SA — Career Guidance Platform
+# PickMyPath — Career Guidance Platform
 
 A Next.js web application providing AI-powered career guidance for South African Grade 9 students.
 
@@ -8,8 +8,8 @@ A Next.js web application providing AI-powered career guidance for South African
 
 ### Step 1 — Clone & install
 ```bash
-git clone https://github.com/YOUR_USERNAME/pathfinder-sa.git
-cd pathfinder-sa
+git clone https://github.com/YOUR_USERNAME/pickmypath.git
+cd pickmypath
 npm install
 ```
 

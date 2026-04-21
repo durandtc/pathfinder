@@ -23,7 +23,7 @@ export default function Login() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Login failed')
-      localStorage.setItem('pf_user', JSON.stringify(data.user))
+      localStorage.setItem('pmp_user', JSON.stringify(data.user))
       router.push(data.user.hasCompletedPayment ? '/assessment' : '/payment')
     } catch (err) {
       setError(err.message)
@@ -34,7 +34,7 @@ export default function Login() {
 
   return (
     <>
-      <Head><title>Sign In — PathFinder SA</title></Head>
+      <Head><title>Sign In — PickMyPath</title></Head>
       <Nav />
       <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem' }}>
         <div style={{ background: 'var(--white)', borderRadius: 16, border: '1px solid var(--border)', boxShadow: 'var(--shadow)', padding: '2.5rem', width: '100%', maxWidth: 420 }}>

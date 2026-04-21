@@ -23,7 +23,7 @@ export default function Register() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Registration failed')
-      localStorage.setItem('pf_user', JSON.stringify(data.user))
+      localStorage.setItem('pmp_user', JSON.stringify(data.user))
       router.push('/payment')
     } catch (err) {
       setError(err.message)
@@ -39,7 +39,7 @@ export default function Register() {
 
   return (
     <>
-      <Head><title>Register — PathFinder SA</title></Head>
+      <Head><title>Register — PickMyPath</title></Head>
       <Nav />
       <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem' }}>
         <div style={cardStyle}>

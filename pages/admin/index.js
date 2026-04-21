@@ -88,7 +88,7 @@ export default function AdminPanel() {
     <div style={{ minHeight: '100vh', background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'sans-serif' }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: '2.5rem', width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontFamily: 'Georgia,serif', fontSize: '1.6rem', color: 'var(--navy)', marginBottom: 4 }}>PathFinder SA</h1>
+          <h1 style={{ fontFamily: 'Georgia,serif', fontSize: '1.6rem', color: 'var(--navy)', marginBottom: 4 }}>PickMyPath</h1>
           <p style={{ color: 'var(--text-mid)', fontSize: '0.875rem' }}>Admin Panel</p>
         </div>
         <form onSubmit={handleLogin}>
@@ -110,7 +110,7 @@ export default function AdminPanel() {
   // ── ADMIN PANEL ──────────────────────────────────────────
   return (
     <>
-      <Head><title>Admin — PathFinder SA</title></Head>
+      <Head><title>Admin — PickMyPath</title></Head>
       <style>{`
         body { background: #f0f2f5; }
         .admin-nav-btn { background: none; border: none; padding: 10px 16px; cursor: pointer; font-size: 0.875rem; border-bottom: 2px solid transparent; color: var(--text-mid); transition: all 0.15s; font-family: sans-serif; }
@@ -143,7 +143,7 @@ export default function AdminPanel() {
 
       {/* Top bar */}
       <div style={{ background: 'var(--navy)', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56 }}>
-        <span style={{ fontFamily: 'Georgia,serif', color: '#fff', fontSize: '1.1rem', fontWeight: 700 }}>PathFinder SA <span style={{ color: 'var(--gold)', fontSize: '0.8rem', fontWeight: 400 }}>Admin</span></span>
+        <span style={{ fontFamily: 'Georgia,serif', color: '#fff', fontSize: '1.1rem', fontWeight: 700 }}>PickMyPath <span style={{ color: 'var(--gold)', fontSize: '0.8rem', fontWeight: 400 }}>Admin</span></span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>● Live</span>
           <button onClick={logout} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: '0.8rem', cursor: 'pointer' }}>Sign out</button>

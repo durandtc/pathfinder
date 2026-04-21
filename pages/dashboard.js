@@ -11,7 +11,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const u = localStorage.getItem('pf_user')
+    const u = localStorage.getItem('pmp_user')
     if (!u) { router.push('/login'); return }
     const parsed = JSON.parse(u)
     setUser(parsed)
@@ -41,7 +41,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Head><title>My Dashboard — PathFinder SA</title></Head>
+      <Head><title>My Dashboard — PickMyPath</title></Head>
       <Nav />
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '3rem 1.5rem' }}>
 

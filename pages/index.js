@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>PathFinder SA — Grade 9 Career Guidance</title>
+        <title>PickMyPath — Grade 9 Career Guidance</title>
         <meta name="description" content="AI-powered career assessment for Grade 9 students. Discover the right subjects and career path for your future." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -116,7 +116,7 @@ export default function Home() {
 
       <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '1.5rem 2rem', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
-          © {new Date().getFullYear()} PathFinder SA · All rights reserved ·{' '}
+          © {new Date().getFullYear()} PickMyPath · All rights reserved ·{' '}
           <Link href="/admin" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>Admin</Link>
         </p>
       </footer>

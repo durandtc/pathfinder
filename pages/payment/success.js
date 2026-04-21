@@ -20,7 +20,7 @@ export default function PaymentSuccess() {
 
   return (
     <>
-      <Head><title>Payment Confirmed — PathFinder SA</title></Head>
+      <Head><title>Payment Confirmed — PickMyPath</title></Head>
       <Nav />
       <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem' }}>
         <div style={{ textAlign: 'center', maxWidth: 480 }}>

@@ -1,5 +1,5 @@
 -- ============================================================
--- PathFinder SA — Supabase Database Schema
+-- PickMyPath — Supabase Database Schema
 -- Run this entire file in your Supabase SQL Editor once.
 -- Supabase Dashboard → SQL Editor → New Query → paste → Run
 -- ============================================================
