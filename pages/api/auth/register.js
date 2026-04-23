@@ -6,7 +6,7 @@ import { sendVerificationEmail } from '../../../lib/sendEmail'
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { fullName, email, password, grade, school } = req.body
+  const { fullName, email, password, stage, school } = req.body
   if (!fullName || !email || !password) return res.status(400).json({ error: 'Name, email and password are required.' })
   if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' })
 
@@ -15,25 +15,25 @@ export default async function handler(req, res) {
   const { data: existing } = await db.from('users').select('id').eq('email', email).maybeSingle()
   if (existing) return res.status(409).json({ error: 'An account with this email already exists. Please sign in.' })
 
-  const passwordHash  = hashPassword(password)
-  const verifyToken   = generateToken()
-  const tokenExpiry   = verifyTokenExpiry()
+  const passwordHash = hashPassword(password)
+  const verifyToken  = generateToken()
+  const tokenExpiry  = verifyTokenExpiry()
 
   const { data: user, error } = await db.from('users').insert({
-    full_name:            fullName,
+    full_name:           fullName,
     email,
-    password_hash:        passwordHash,
-    auth_provider:        'email',
-    grade:                grade || null,
-    school:               school || null,
-    email_verified:       false,
-    verify_token:         verifyToken,
-    verify_token_expiry:  tokenExpiry,
+    password_hash:       passwordHash,
+    auth_provider:       'email',
+    grade:               stage || null,   // storing stage in the grade column
+    school:              school || null,
+    email_verified:      false,
+    verify_token:        verifyToken,
+    verify_token_expiry: tokenExpiry,
   }).select().single()
 
   if (error) return res.status(500).json({ error: 'Could not create account. Please try again.' })
 
-  // Send verification email — don't block registration if it fails
+  // Send verification email — non-blocking
   try {
     await sendVerificationEmail({ toEmail: email, toName: fullName, token: verifyToken })
   } catch (emailErr) {
@@ -45,10 +45,11 @@ export default async function handler(req, res) {
 
   return res.status(201).json({
     user: {
-      id: user.id,
-      fullName: user.full_name,
-      email: user.email,
-      emailVerified: false,
+      id:                  user.id,
+      fullName:            user.full_name,
+      email:               user.email,
+      stage:               stage || null,
+      emailVerified:       false,
       hasCompletedPayment: false,
     },
   })

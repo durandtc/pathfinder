@@ -1,21 +1,24 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { signInWithGoogle } from '../lib/firebase'
+import { CAREER_STAGES, STAGE_GROUPS } from '../lib/stageConfig'
 
 export default function GoogleSignInButton({ label = 'Continue with Google' }) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const router  = useRouter()
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
+  const [showStageModal, setShowStageModal] = useState(false)
+  const [pendingUser, setPendingUser]  = useState(null)
+  const [selectedStage, setSelectedStage] = useState('')
+  const [savingStage, setSavingStage]  = useState(false)
 
   async function handleGoogleSignIn() {
     setError('')
     setLoading(true)
     try {
-      // Step 1 — Firebase Google popup
       const firebaseUser = await signInWithGoogle()
 
-      // Step 2 — Send to our backend to create/fetch the Supabase user
-      const res = await fetch('/api/auth/google', {
+      const res  = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -27,22 +30,21 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
       })
 
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error || `Server error ${res.status}`)
+      if (!data.user) throw new Error('No user data returned from server')
 
-      if (!res.ok) {
-        // Show the actual error from the server so we can diagnose it
-        throw new Error(data.error || `Server error ${res.status}`)
+      // If this Google user has no stage set yet — show the stage selector
+      if (data.user.needsStage) {
+        setPendingUser(data.user)
+        setShowStageModal(true)
+        setLoading(false)
+        return
       }
 
-      if (!data.user) {
-        throw new Error('No user data returned from server')
-      }
-
-      // Step 3 — Save user and redirect to dashboard
       localStorage.setItem('pmp_user', JSON.stringify(data.user))
       router.push('/dashboard')
 
     } catch (err) {
-      // Don't swallow errors — always show them
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setError('Sign-in was cancelled. Please try again.')
       } else if (err.code === 'auth/popup-blocked') {
@@ -54,6 +56,26 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleStageSubmit() {
+    if (!selectedStage) return
+    setSavingStage(true)
+    try {
+      // Save stage to the database
+      await fetch('/api/auth/update-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: pendingUser.id, stage: selectedStage }),
+      })
+      const updatedUser = { ...pendingUser, stage: selectedStage, needsStage: false }
+      localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
+      router.push('/dashboard')
+    } catch {
+      // Even if save fails, let them in — stage can be set later
+      localStorage.setItem('pmp_user', JSON.stringify({ ...pendingUser, needsStage: false }))
+      router.push('/dashboard')
     }
   }
 
@@ -82,6 +104,44 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
 
   return (
     <div>
+      {/* Stage selector modal for new Google users */}
+      {showStageModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,61,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'var(--white)', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', fontSize: '1.4rem', marginBottom: '0.5rem' }}>
+              Welcome to PickMyPath!
+            </h3>
+            <p style={{ color: 'var(--text-mid)', fontSize: '0.875rem', marginBottom: '1.25rem', lineHeight: 1.6, fontWeight: 300 }}>
+              Hi {pendingUser?.fullName?.split(' ')[0]} — one quick question before we continue. This helps us tailor your assessment and report to your exact situation.
+            </p>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--navy)', marginBottom: 8 }}>
+              What is your current grade or career stage?
+            </label>
+            <select
+              value={selectedStage}
+              onChange={e => setSelectedStage(e.target.value)}
+              style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: '0.95rem', background: 'var(--cream)', color: 'var(--text-dark)', marginBottom: '1.25rem', cursor: 'pointer' }}
+            >
+              <option value="">Select your stage...</option>
+              {STAGE_GROUPS.map(group => (
+                <optgroup key={group} label={group}>
+                  {CAREER_STAGES.filter(s => s.group === group).map(s => (
+                    <option key={s.value} value={s.value}>{s.label} — {s.description}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <button
+              onClick={handleStageSubmit}
+              disabled={!selectedStage || savingStage}
+              style={{ width: '100%', padding: '13px', background: selectedStage ? 'var(--navy)' : 'var(--border)', color: selectedStage ? '#fff' : 'var(--text-light)', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: selectedStage ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}
+            >
+              {savingStage ? 'Saving...' : 'Continue to Dashboard →'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={handleGoogleSignIn}
@@ -102,14 +162,8 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
         {loading ? 'Signing in with Google...' : label}
       </button>
 
-      {/* Error shown prominently so it is never missed */}
       {error && (
-        <div style={{
-          marginTop: 10, padding: '10px 14px',
-          background: '#fff0f0', border: '1px solid #f09595',
-          borderRadius: 8, fontSize: '0.85rem', color: '#a32d2d',
-          lineHeight: 1.5,
-        }}>
+        <div style={{ marginTop: 10, padding: '10px 14px', background: '#fff0f0', border: '1px solid #f09595', borderRadius: 8, fontSize: '0.85rem', color: '#a32d2d', lineHeight: 1.5 }}>
           {error}
           {error.includes('auth/') && (
             <div style={{ marginTop: 6, fontSize: '0.78rem', color: '#c04040' }}>

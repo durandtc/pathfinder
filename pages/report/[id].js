@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Nav from '../../components/Nav'
 import Link from 'next/link'
+import { getStageConfig, isSchoolLearner } from '../../lib/stageConfig'
 
 const AI_COLOR = { high: '#2d7a4f', medium: '#854f0b', low: '#a32d2d' }
 const AI_BG    = { high: '#f0fff4', medium: '#fff8ec', low: '#fff0f0' }
@@ -36,13 +37,18 @@ export default function ReportPage() {
   }
 
   if (loading) return (<><Nav /><div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--text-mid)' }}>Loading your report...</p></div></>)
-  if (error)   return (<><Nav /><div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--text-mid)' }}>{error}</p></div></>)
+  if (error)   return (<><Nav /><div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}><p style={{ color: 'var(--text-mid)' }}>{error}</p><Link href="/dashboard">← Back to Dashboard</Link></div></>)
   if (!report) return null
 
   const rd      = report.top_careers
   const careers = rd?.careers || []
   const riasec  = rd?.riasec_profile
   const date    = new Date(report.generated_at).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })
+
+  // Get stage config from user if available
+  const stage        = user?.stage || 'grade_9'
+  const stageConfig  = getStageConfig(stage)
+  const schoolLearner = isSchoolLearner(stage)
 
   return (
     <>
@@ -52,24 +58,37 @@ export default function ReportPage() {
 
         {/* Report header */}
         <div style={{ background: 'var(--navy)', borderRadius: 16, padding: '2.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'inline-block', background: 'rgba(201,151,58,0.2)', color: '#e8b856', border: '1px solid rgba(201,151,58,0.35)', borderRadius: 20, padding: '3px 14px', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {stageConfig.label}
+          </div>
           <h1 style={{ fontFamily: 'Georgia,serif', fontSize: '1.8rem', color: '#fff', marginBottom: '0.5rem' }}>
             {user?.fullName ? `${user.fullName}'s` : 'Your'} Career Report
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', marginBottom: '1rem' }}>Generated on {date} · PickMyPath</p>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem', marginBottom: '1rem' }}>Generated {date} · PickMyPath</p>
+
+          {/* Stage context */}
+          {rd?.stage_context && (
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', lineHeight: 1.6, fontWeight: 300, marginBottom: '1rem', fontStyle: 'italic' }}>
+              {rd.stage_context}
+            </p>
+          )}
+
           {riasec?.dominant_types?.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: '0.75rem' }}>
               <span style={{ background: 'rgba(201,151,58,0.25)', color: '#e8b856', border: '1px solid rgba(201,151,58,0.4)', borderRadius: 20, padding: '4px 14px', fontSize: '0.8rem', fontWeight: 500 }}>
                 RIASEC: {riasec.dominant_types.join(' · ')}
               </span>
             </div>
           )}
-          {riasec?.summary && <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.7, fontWeight: 300 }}>{riasec.summary}</p>}
+          {riasec?.summary && <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.7, fontWeight: 300, margin: 0 }}>{riasec.summary}</p>}
         </div>
 
-        {/* Academic observations — only show if present */}
+        {/* Academic / background observations */}
         {rd?.academic_observations && (
           <div style={{ background: '#f0f7ff', borderRadius: 12, padding: '1.25rem 1.5rem', marginBottom: '1.5rem', border: '1px solid #b5d4f4' }}>
-            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', fontSize: '1rem', marginBottom: '0.5rem' }}>📊 What your marks tell us</h3>
+            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', fontSize: '1rem', marginBottom: '0.5rem' }}>
+              {schoolLearner ? '📊 What your marks tell us' : '📊 What your background tells us'}
+            </h3>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: 0 }}>{rd.academic_observations}</p>
           </div>
         )}
@@ -92,14 +111,14 @@ export default function ReportPage() {
               <SectionLabel>About this career</SectionLabel>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: 0 }}>{c.summary}</p>
 
-              {c.academic_fit && (
+              {c.current_position_assessment && (
                 <>
-                  <SectionLabel>Your academic position</SectionLabel>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', lineHeight: 1.6, margin: 0 }}>{c.academic_fit}</p>
+                  <SectionLabel>Your current position</SectionLabel>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', lineHeight: 1.6, margin: 0 }}>{c.current_position_assessment}</p>
                 </>
               )}
 
-              <SectionLabel>Required Grade 10–12 subjects</SectionLabel>
+              <SectionLabel>{schoolLearner ? 'Required subjects' : 'Required qualifications & skills'}</SectionLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                 {(c.subjects_required || []).map(s => <span key={s} style={{ background: '#e8f0f8', color: '#1a3260', borderRadius: 6, padding: '3px 9px', fontSize: '0.8rem', fontWeight: 500 }}>{s}</span>)}
               </div>
@@ -109,15 +128,14 @@ export default function ReportPage() {
                 </div>
               )}
 
-              <SectionLabel>NSC grades & APS requirements</SectionLabel>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', margin: '0 0 2px', fontWeight: 500 }}>{c.nsc_grades}</p>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', margin: '0 0 2px' }}>{c.aps_score}</p>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', fontStyle: 'italic', margin: 0 }}>{c.study_path}</p>
+              <SectionLabel>{schoolLearner ? 'NSC grades & APS requirements' : 'Requirements & pathway'}</SectionLabel>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', margin: '0 0 2px', fontWeight: 500 }}>{c.requirements || c.nsc_grades}</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', fontStyle: 'italic', margin: 0 }}>{c.pathway || c.study_path}</p>
 
               <SectionLabel>AI impact on this career</SectionLabel>
               <div style={{ background: AI_BG[c.ai_resilience] || '#fff8ec', borderLeft: `3px solid ${AI_COLOR[c.ai_resilience] || 'var(--gold)'}`, borderRadius: '0 8px 8px 0', padding: '10px 12px' }}>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', lineHeight: 1.6, margin: 0 }}>{c.ai_impact}</p>
-                <p style={{ fontSize: '0.72rem', fontWeight: 700, marginTop: 6, color: AI_COLOR[c.ai_resilience] || 'var(--gold)', margin: '6px 0 0' }}>
+                <p style={{ fontSize: '0.72rem', fontWeight: 700, marginTop: 6, color: AI_COLOR[c.ai_resilience] || 'var(--gold)' }}>
                   AI resilience: {(c.ai_resilience || 'medium').toUpperCase()}
                 </p>
               </div>
@@ -125,18 +143,22 @@ export default function ReportPage() {
           </div>
         ))}
 
-        {/* Subject advice */}
-        {rd?.subject_advice && (
+        {/* Subject / next steps advice — label changes by stage */}
+        {rd?.subject_or_next_steps_advice && (
           <div style={{ background: '#f0f7ff', borderRadius: 12, padding: '1.5rem', marginBottom: '1.25rem' }}>
-            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>Subject selection advice</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: 0 }}>{rd.subject_advice}</p>
+            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>
+              {schoolLearner ? '📚 Subject selection advice' : '🗺 Your next steps'}
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: 0 }}>{rd.subject_or_next_steps_advice}</p>
           </div>
         )}
 
-        {/* Parent note */}
+        {/* Parent / support person note */}
         {rd?.parent_note && (
           <div style={{ background: '#eeedfe', borderRadius: 12, padding: '1.5rem', marginBottom: '1.25rem', border: '1px solid #afa9ec' }}>
-            <h3 style={{ fontFamily: 'Georgia,serif', color: '#3c3489', marginBottom: '0.75rem', fontSize: '1.1rem' }}>👨‍👩‍👧 A note for the parent</h3>
+            <h3 style={{ fontFamily: 'Georgia,serif', color: '#3c3489', marginBottom: '0.75rem', fontSize: '1.1rem' }}>
+              👨‍👩‍👧 A note for your support person
+            </h3>
             <p style={{ fontSize: '0.9rem', color: '#534ab7', lineHeight: 1.7, margin: 0 }}>{rd.parent_note}</p>
           </div>
         )}
@@ -160,7 +182,7 @@ export default function ReportPage() {
         </div>
 
         <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', textAlign: 'center' }}>
-          PickMyPath is a guidance tool based on Holland RIASEC + academic performance. We recommend discussing your results with a registered school counsellor or career guidance professional.
+          PickMyPath is a guidance tool based on Holland RIASEC + academic performance analysis. We recommend discussing your results with a registered career guidance professional.
         </p>
       </div>
     </>

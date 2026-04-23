@@ -4,19 +4,21 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Nav from '../components/Nav'
 import GoogleSignInButton from '../components/GoogleSignInButton'
+import { CAREER_STAGES, STAGE_GROUPS } from '../lib/stageConfig'
 
 export default function Register() {
   const router = useRouter()
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', grade: '', school: '' })
-  const [error, setError] = useState('')
+  const [form, setForm]     = useState({ fullName: '', email: '', password: '', stage: '', school: '' })
+  const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    if (!form.stage) { setError('Please select your current grade or career stage.'); return }
     setLoading(true)
     try {
-      const res = await fetch('/api/auth/register', {
+      const res  = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -32,19 +34,16 @@ export default function Register() {
     }
   }
 
-  const cardStyle = {
-    background: 'var(--white)', borderRadius: 16, border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow)', padding: '2.5rem', width: '100%', maxWidth: 420,
-  }
-
   return (
     <>
       <Head><title>Register — PickMyPath</title></Head>
       <Nav />
       <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem' }}>
-        <div style={cardStyle}>
-          <h2 style={{ fontFamily: 'Georgia,serif', fontSize: '1.8rem', color: 'var(--navy)', marginBottom: '0.5rem' }}>Create your account</h2>
-          <p style={{ color: 'var(--text-mid)', fontSize: '0.9rem', marginBottom: '1.75rem', fontWeight: 300 }}>Join thousands of Grade 9 students finding their path</p>
+        <div style={{ background: 'var(--white)', borderRadius: 16, border: '1px solid var(--border)', boxShadow: 'var(--shadow)', padding: '2.5rem', width: '100%', maxWidth: 440 }}>
+          <h2 style={{ fontFamily: 'Georgia,serif', fontSize: '1.8rem', color: 'var(--navy)', marginBottom: '0.4rem' }}>Create your account</h2>
+          <p style={{ color: 'var(--text-mid)', fontSize: '0.875rem', marginBottom: '1.5rem', fontWeight: 300 }}>
+            Career guidance for every stage — school, university, or working life
+          </p>
 
           <GoogleSignInButton label="Register with Google" />
 
@@ -55,37 +54,53 @@ export default function Register() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            {[
-              { label: 'Full name', key: 'fullName', type: 'text', placeholder: 'e.g. Thabo Nkosi', required: true },
-              { label: 'Email address', key: 'email', type: 'email', placeholder: 'you@email.com', required: true },
-              { label: 'Password', key: 'password', type: 'password', placeholder: 'Choose a strong password (min 8 chars)', required: true },
-              { label: 'Grade', key: 'grade', type: 'text', placeholder: 'e.g. Grade 9', required: false },
-              { label: 'School (optional)', key: 'school', type: 'text', placeholder: 'e.g. Rondebosch Boys High', required: false },
-            ].map(f => (
-              <div key={f.key} className="form-group">
-                <label>{f.label}</label>
-                <input
-                  className="form-input"
-                  type={f.type}
-                  placeholder={f.placeholder}
-                  required={f.required}
-                  value={form[f.key]}
-                  onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                />
-              </div>
-            ))}
+            <div className="form-group">
+              <label>Full name</label>
+              <input className="form-input" type="text" placeholder="e.g. Thabo Nkosi" required value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} />
+            </div>
 
-            {error && <p className="error-msg">{error}</p>}
+            <div className="form-group">
+              <label>Email address</label>
+              <input className="form-input" type="email" placeholder="you@email.com" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
 
-            <button type="submit" disabled={loading} style={{
-              width: '100%', padding: '13px', background: 'var(--navy)', color: 'var(--white)',
-              border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: 'pointer',
-              marginTop: '0.5rem', opacity: loading ? 0.7 : 1,
-            }}>
+            <div className="form-group">
+              <label>Password</label>
+              <input className="form-input" type="password" placeholder="Minimum 8 characters" required value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+            </div>
+
+            {/* Career stage dropdown — the key new field */}
+            <div className="form-group">
+              <label>Your current grade or career stage <span style={{ color: '#a32d2d' }}>*</span></label>
+              <select
+                className="form-input"
+                required
+                value={form.stage}
+                onChange={e => setForm({ ...form, stage: e.target.value })}
+                style={{ cursor: 'pointer' }}
+              >
+                <option value="">Select your stage...</option>
+                {STAGE_GROUPS.map(group => (
+                  <optgroup key={group} label={group}>
+                    {CAREER_STAGES.filter(s => s.group === group).map(s => (
+                      <option key={s.value} value={s.value}>{s.label} — {s.description}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>School, university or employer <span style={{ color: 'var(--text-light)', fontWeight: 300 }}>(optional)</span></label>
+              <input className="form-input" type="text" placeholder="e.g. Rondebosch Boys High, UCT, Standard Bank" value={form.school} onChange={e => setForm({ ...form, school: e.target.value })} />
+            </div>
+
+            {error && <p className="error-msg" style={{ marginBottom: 10 }}>{error}</p>}
+
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '13px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: 'pointer', marginTop: '0.25rem', opacity: loading ? 0.7 : 1 }}>
               {loading ? 'Creating account...' : 'Create account & continue'}
             </button>
           </form>
-
 
           <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-mid)' }}>
             Already have an account? <Link href="/login">Sign in</Link>

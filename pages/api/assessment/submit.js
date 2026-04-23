@@ -12,7 +12,9 @@ export default async function handler(req, res) {
   const { data: user } = await db.from('users').select('*').eq('id', userId).single()
   if (!user) return res.status(404).json({ error: 'User not found' })
 
-  // Get or create assessment
+  // The stage is stored in the grade column
+  const stage = user.grade || 'grade_9'
+
   let { data: assessment } = await db
     .from('assessments').select('*').eq('user_id', userId)
     .eq('status', 'not_started').order('created_at', { ascending: false }).limit(1).maybeSingle()
@@ -26,7 +28,6 @@ export default async function handler(req, res) {
     await db.from('assessments').update({ status: 'in_progress', started_at: new Date().toISOString() }).eq('id', assessment.id)
   }
 
-  // Store answers
   const { QUESTIONS, SECTIONS } = require('../../../lib/questions')
   const answerRows = Object.entries(answers).map(([idx, value]) => {
     const q = QUESTIONS[parseInt(idx)]
@@ -35,29 +36,32 @@ export default async function handler(req, res) {
   await db.from('answers').delete().eq('assessment_id', assessment.id)
   await db.from('answers').insert(answerRows)
 
-  // Generate AI report — now passing marks as well
+  // Generate AI report — pass stage so advice is tailored
   let reportData, rawText
   try {
-    const result = await generateCareerReport(answers, marks || [])
+    const result = await generateCareerReport(answers, marks || [], stage)
     reportData = result.reportData
     rawText    = result.rawText
   } catch (err) {
     return res.status(500).json({ error: `AI generation failed: ${err.message}` })
   }
 
-  // Save report including marks data
   const { data: report } = await db.from('reports').insert({
-    assessment_id:    assessment.id,
-    user_id:          userId,
-    top_careers:      reportData,
-    riasec_scores:    reportData.riasec_profile || {},
-    ai_raw_response:  rawText,
-    generated_at:     new Date().toISOString(),
-    email_sent:       false,
+    assessment_id:   assessment.id,
+    user_id:         userId,
+    top_careers:     reportData,
+    riasec_scores:   reportData.riasec_profile || {},
+    ai_raw_response: rawText,
+    generated_at:    new Date().toISOString(),
+    email_sent:      false,
   }).select().single()
 
   await db.from('assessments').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', assessment.id)
-  await db.from('audit_log').insert({ action: 'Assessment completed', details: `User ${user.email} · marks provided: ${(marks||[]).filter(m=>m.subject).length}`, performed_by: 'system' })
+  await db.from('audit_log').insert({
+    action:       'Assessment completed',
+    details:      `User ${user.email} · Stage: ${stage} · Marks: ${(marks||[]).filter(m=>m.subject).length}`,
+    performed_by: 'system',
+  })
 
   return res.status(200).json({ reportId: report.id })
 }
