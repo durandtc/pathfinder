@@ -48,7 +48,7 @@ export default function Home() {
       {/* WHO IS THIS FOR */}
       <section style={{ padding: '5rem 2rem', maxWidth: 1000, margin: '0 auto' }}>
         <div style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', marginBottom: '0.75rem' }}>Who it's for</div>
-        <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(1.8rem,4vw,2.4rem)', color: 'var(--navy)', marginBottom: '1rem' }}>Career clarity at every stage</div>
+        <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(1.8rem,4vw,2.4rem)', color: 'var(--navy)', marginBottom: '1rem' }}>Career clarity at every stage</h2>
         <p style={{ color: 'var(--text-mid)', maxWidth: 560, fontWeight: 300, marginBottom: '3rem', lineHeight: 1.7 }}>One assessment, tailored to your exact situation. The AI adapts its guidance based on where you are in life right now.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
           {[
