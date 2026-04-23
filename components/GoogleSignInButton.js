@@ -5,17 +5,16 @@ import { signInWithGoogle } from '../lib/firebase'
 export default function GoogleSignInButton({ label = 'Continue with Google' }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]     = useState('')
 
   async function handleGoogleSignIn() {
     setError('')
     setLoading(true)
     try {
-      // Step 1 — Firebase opens the Google popup and returns the user
+      // Step 1 — Firebase Google popup
       const firebaseUser = await signInWithGoogle()
 
-      // Step 2 — Send Google user details to our own backend
-      // This creates/finds the user in Supabase and returns our JWT
+      // Step 2 — Send to our backend to create/fetch the Supabase user
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,27 +27,36 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Google sign-in failed')
 
-      // Step 3 — Store user info in localStorage (same as email login)
-      localStorage.setItem('pf_user', JSON.stringify(data.user))
+      if (!res.ok) {
+        // Show the actual error from the server so we can diagnose it
+        throw new Error(data.error || `Server error ${res.status}`)
+      }
 
-      // Step 4 — Redirect
-      router.push(data.user.hasCompletedPayment ? '/assessment' : '/payment')
+      if (!data.user) {
+        throw new Error('No user data returned from server')
+      }
+
+      // Step 3 — Save user and redirect to dashboard
+      localStorage.setItem('pmp_user', JSON.stringify(data.user))
+      router.push('/dashboard')
 
     } catch (err) {
-      // Firebase popup-closed error — user cancelled, not a real error
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in cancelled.')
+      // Don't swallow errors — always show them
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        setError('Sign-in was cancelled. Please try again.')
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.')
+      } else if (err.code?.startsWith('auth/')) {
+        setError(`Google sign-in error: ${err.message}`)
       } else {
-        setError(err.message || 'Google sign-in failed. Please try again.')
+        setError(`Sign-in failed: ${err.message}`)
       }
     } finally {
       setLoading(false)
     }
   }
 
-  // Google "G" SVG logo
   const GoogleLogo = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" style={{ flexShrink: 0 }}>
       <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.17z"/>
@@ -58,7 +66,6 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
     </svg>
   )
 
-  // Check if Firebase is configured — if not, show a helpful message
   const firebaseConfigured = !!(
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
     process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
@@ -67,11 +74,7 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
 
   if (!firebaseConfigured) {
     return (
-      <div style={{
-        width: '100%', padding: '11px 14px', background: 'var(--cream)',
-        border: '1.5px dashed var(--border)', borderRadius: 8,
-        fontSize: '0.875rem', color: 'var(--text-light)', textAlign: 'center',
-      }}>
+      <div style={{ width: '100%', padding: '11px 14px', background: 'var(--cream)', border: '1.5px dashed var(--border)', borderRadius: 8, fontSize: '0.875rem', color: 'var(--text-light)', textAlign: 'center' }}>
         Google Sign-In not yet configured — add Firebase env vars in Vercel
       </div>
     )
@@ -87,19 +90,33 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
           width: '100%', padding: '11px 14px',
           background: 'var(--white)', color: 'var(--text-dark)',
           border: '1.5px solid var(--border)', borderRadius: 8,
-          fontSize: '0.95rem', fontWeight: 400, cursor: loading ? 'not-allowed' : 'pointer',
+          fontSize: '0.95rem', fontWeight: 400,
+          cursor: loading ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          transition: 'border-color 0.2s',
-          opacity: loading ? 0.7 : 1,
+          transition: 'border-color 0.2s', opacity: loading ? 0.7 : 1,
         }}
-        onMouseOver={e => e.currentTarget.style.borderColor = 'var(--text-mid)'}
+        onMouseOver={e => { if (!loading) e.currentTarget.style.borderColor = 'var(--text-mid)' }}
         onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}
       >
         <GoogleLogo />
-        {loading ? 'Opening Google...' : label}
+        {loading ? 'Signing in with Google...' : label}
       </button>
+
+      {/* Error shown prominently so it is never missed */}
       {error && (
-        <p style={{ color: '#a32d2d', fontSize: '0.8rem', marginTop: 6, textAlign: 'center' }}>{error}</p>
+        <div style={{
+          marginTop: 10, padding: '10px 14px',
+          background: '#fff0f0', border: '1px solid #f09595',
+          borderRadius: 8, fontSize: '0.85rem', color: '#a32d2d',
+          lineHeight: 1.5,
+        }}>
+          {error}
+          {error.includes('auth/') && (
+            <div style={{ marginTop: 6, fontSize: '0.78rem', color: '#c04040' }}>
+              Tip: Make sure your Vercel URL is added to Firebase → Authentication → Settings → Authorized domains
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
