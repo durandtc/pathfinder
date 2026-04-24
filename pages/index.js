@@ -64,6 +64,26 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FRAMEWORKS */}
+      <section style={{ padding: '5rem 2rem', maxWidth: 1000, margin: '0 auto' }}>
+        <div style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', marginBottom: '0.75rem' }}>The science behind it</div>
+        <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(1.8rem,4vw,2.4rem)', color: 'var(--navy)', marginBottom: '1rem' }}>Our validated frameworks</h2>
+        <p style={{ color: 'var(--text-mid)', maxWidth: 560, fontWeight: 300, marginBottom: '3rem', lineHeight: 1.7 }}>PickMyPath uses three scientifically validated career assessment frameworks to give you a complete picture of your strengths, interests, and fit for different careers.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          {[
+            ['🎯', 'Holland RIASEC', 'The world\'s most widely used career interest framework. We assess your natural preferences across six career interest types: Realistic, Investigative, Artistic, Social, Enterprising, and Conventional — then match you with careers that align.'],
+            ['💼', 'Career Values', 'What matters most in your ideal career? We explore your work preferences, the type of environment you thrive in, subject interests, and personal values — ensuring your path aligns with what genuinely motivates you.'],
+            ['🧠', 'Aptitude Assessment', 'Based on proven aptitude frameworks (SDS, SII, MBTI, Kuder, CareerDirect), we evaluate your academic strengths, problem-solving abilities, and practical skills to identify careers where you\'ll naturally excel.'],
+          ].map(([icon, title, desc]) => (
+            <div key={title} style={{ background: 'var(--white)', borderRadius: 12, padding: '1.75rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{icon}</div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '0.75rem' }}>{title}</h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', lineHeight: 1.6, fontWeight: 300 }}>{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section id="how" style={{ background: 'var(--cream-mid)', padding: '5rem 2rem' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -84,26 +104,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* FRAMEWORKS */}
-      <section style={{ padding: '5rem 2rem', maxWidth: 1000, margin: '0 auto' }}>
-        <div style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', marginBottom: '0.75rem' }}>The science behind it</div>
-        <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(1.8rem,4vw,2.4rem)', color: 'var(--navy)', marginBottom: '1rem' }}>Our validated frameworks</h2>
-        <p style={{ color: 'var(--text-mid)', maxWidth: 560, fontWeight: 300, marginBottom: '3rem', lineHeight: 1.7 }}>PickMyPath uses three scientifically validated career assessment frameworks to give you a complete picture of your strengths, interests, and fit for different careers.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-          {[
-            ['🎯', 'Holland RIASEC', 'The world\'s most widely used career interest framework. We assess your natural preferences across six career interest types: Realistic, Investigative, Artistic, Social, Enterprising, and Conventional — then match you with careers that align.'],
-            ['💼', 'Career Values', 'What matters most in your ideal career? We explore your work preferences, the type of environment you thrive in, subject interests, and personal values — ensuring your path aligns with what genuinely motivates you.'],
-            ['🧠', 'Aptitude Assessment', 'Based on proven aptitude frameworks (SDS, SII, MBTI, Kuder, CareerDirect), we evaluate your academic strengths, problem-solving abilities, and practical skills to identify careers where you\'ll naturally excel.'],
-          ].map(([icon, title, desc]) => (
-            <div key={title} style={{ background: 'var(--white)', borderRadius: 12, padding: '1.75rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{icon}</div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '0.75rem' }}>{title}</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', lineHeight: 1.6, fontWeight: 300 }}>{desc}</p>
-            </div>
-          ))}
         </div>
       </section>
 
