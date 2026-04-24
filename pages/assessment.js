@@ -2,7 +2,7 @@ import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Nav from '../components/Nav'
-import { QUESTIONS, SECTIONS, CAPS_SUBJECTS, TERMS, TOTAL_QUESTIONS } from '../lib/questions'
+import { QUESTIONS, SECTIONS, CAPS_SUBJECTS, TERMS, TOTAL_QUESTIONS, getQuestionsForStage } from '../lib/questions'
 
 const EMPTY_MARK = { subject: '', term1: '', term2: '', term3: '', term4: '' }
 
@@ -14,19 +14,27 @@ export default function Assessment() {
   const [marks, setMarks]       = useState([{ ...EMPTY_MARK }, { ...EMPTY_MARK }, { ...EMPTY_MARK }, { ...EMPTY_MARK }, { ...EMPTY_MARK }])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]       = useState('')
-
-  // Marks section index = TOTAL_QUESTIONS (virtual last "question")
-  const MARKS_IDX = TOTAL_QUESTIONS
-  const isMarksScreen = currentQ === MARKS_IDX
+  const [filteredQuestions, setFilteredQuestions] = useState(QUESTIONS)
+  const [filteredSections, setFilteredSections] = useState(SECTIONS)
 
   useEffect(() => {
     const u = localStorage.getItem('pmp_user')
     if (!u) { router.push('/login'); return }
-    setUser(JSON.parse(u))
+    const parsed = JSON.parse(u)
+    setUser(parsed)
+
+    // Get questions filtered by user's stage
+    const { questions, sections } = getQuestionsForStage(parsed.grade || 'grade_9')
+    setFilteredQuestions(questions)
+    setFilteredSections(sections)
+
     const savedAnswers = localStorage.getItem('pmp_answers')
     const savedMarks   = localStorage.getItem('pmp_marks')
+    const savedQuestion = localStorage.getItem('pmp_currentQ')
+
     if (savedAnswers) setAnswers(JSON.parse(savedAnswers))
     if (savedMarks)   setMarks(JSON.parse(savedMarks))
+    if (savedQuestion) setCurrentQ(parseInt(savedQuestion, 10))
   }, [])
 
   function selectAnswer(val) {
@@ -59,12 +67,19 @@ export default function Assessment() {
     if (currentQ === MARKS_IDX) {
       submitAssessment()
     } else {
-      setCurrentQ(currentQ + 1)
+      const nextQ = currentQ + 1
+      setCurrentQ(nextQ)
+      localStorage.setItem('pmp_currentQ', String(nextQ))
     }
   }
 
   function goBack() {
-    if (currentQ > 0) { setError(''); setCurrentQ(currentQ - 1) }
+    if (currentQ > 0) {
+      setError('')
+      const prevQ = currentQ - 1
+      setCurrentQ(prevQ)
+      localStorage.setItem('pmp_currentQ', String(prevQ))
+    }
   }
 
   async function submitAssessment() {
@@ -80,6 +95,7 @@ export default function Assessment() {
       if (!res.ok) throw new Error(data.error || 'Submission failed')
       localStorage.removeItem('pmp_answers')
       localStorage.removeItem('pmp_marks')
+      localStorage.removeItem('pmp_currentQ')
       router.push(`/report/${data.reportId}`)
     } catch (err) {
       setError(err.message)
@@ -87,7 +103,11 @@ export default function Assessment() {
     }
   }
 
-  if (!user) return null
+  if (!user || filteredQuestions.length === 0) return null
+
+  const TOTAL_FILTERED_QUESTIONS = filteredQuestions.length
+  const MARKS_IDX = TOTAL_FILTERED_QUESTIONS
+  const isMarksScreen = currentQ === MARKS_IDX
 
   if (submitting) return (
     <>
@@ -104,14 +124,17 @@ export default function Assessment() {
     </>
   )
 
-  // Calculate progress — marks screen counts as the last step
-  const totalSteps = TOTAL_QUESTIONS + 1  // +1 for marks screen
+  // Calculate progress — marks screen counts as the last step (only for students)
+  const hasMarksSection = filteredSections.some(s => s.id === 'marks')
+  const totalSteps = TOTAL_FILTERED_QUESTIONS + (hasMarksSection ? 1 : 0)
   const pct = Math.round(((currentQ + 1) / totalSteps) * 100)
 
   // Current section info
-  const q = !isMarksScreen ? QUESTIONS[currentQ] : null
-  const currentSection = isMarksScreen ? SECTIONS[4] : SECTIONS[q.section]
-  const isParentSection = isMarksScreen || q?.section === 3
+  const q = !isMarksScreen ? filteredQuestions[currentQ] : null
+  const currentSection = isMarksScreen
+    ? filteredSections.find(s => s.id === 'marks')
+    : filteredSections[q?.section]
+  const isParentSection = isMarksScreen || q?.section === filteredSections.findIndex(s => s.id === 'parent')
 
   return (
     <>
@@ -122,7 +145,7 @@ export default function Assessment() {
         {/* Progress bar */}
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-light)', marginBottom: 6 }}>
-            <span>{isMarksScreen ? 'Final step' : `Section ${q.section + 1} of 5 · Question ${currentQ + 1} of ${TOTAL_QUESTIONS + 1}`}</span>
+            <span>{isMarksScreen ? 'Final step' : `Question ${currentQ + 1} of ${TOTAL_FILTERED_QUESTIONS}${hasMarksSection ? ' + marks' : ''}`}</span>
             <span>{pct}% complete</span>
           </div>
           <div style={{ background: 'var(--cream-mid)', borderRadius: 99, height: 6 }}>
@@ -238,7 +261,7 @@ export default function Assessment() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.75rem', color: 'var(--text-light)' }}>
-          {Object.keys(answers).length} of {TOTAL_QUESTIONS} questions answered · progress auto-saved
+          {Object.keys(answers).length} of {TOTAL_FILTERED_QUESTIONS} questions answered · progress auto-saved
         </p>
       </div>
     </>

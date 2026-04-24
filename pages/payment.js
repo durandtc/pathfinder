@@ -11,7 +11,8 @@ export default function Payment() {
 
   const price = parseInt(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
   const vat = parseInt(process.env.NEXT_PUBLIC_VAT_RATE || '15')
-  const total = Math.round(price * (1 + vat / 100))
+  const vatAmount = parseFloat((price * vat / 100).toFixed(2))
+  const total = price + vatAmount
 
   useEffect(() => {
     const u = localStorage.getItem('pmp_user')
@@ -64,7 +65,7 @@ export default function Payment() {
               <span>VAT ({vat}%)</span><span>R{(price * vat / 100).toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 500, color: 'var(--navy)', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 6 }}>
-              <span>Total</span><span>R{total}.00</span>
+              <span>Total</span><span>R{total.toFixed(2)}</span>
             </div>
           </div>
 
@@ -81,7 +82,7 @@ export default function Payment() {
             border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: 'pointer',
             opacity: loading ? 0.7 : 1,
           }}>
-            {loading ? 'Processing...' : `Pay R${total} & Start Assessment`}
+            {loading ? 'Processing...' : `Pay R${total.toFixed(2)} & Start Assessment`}
           </button>
 
           <p style={{ fontSize: '0.78rem', color: 'var(--text-light)', textAlign: 'center', marginTop: '1rem' }}>

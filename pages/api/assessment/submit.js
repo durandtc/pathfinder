@@ -28,10 +28,13 @@ export default async function handler(req, res) {
     await db.from('assessments').update({ status: 'in_progress', started_at: new Date().toISOString() }).eq('id', assessment.id)
   }
 
-  const { QUESTIONS, SECTIONS } = require('../../../lib/questions')
+  const { getQuestionsForStage, SECTIONS } = require('../../../lib/questions')
+  const { questions: filteredQuestions, sections: filteredSections } = getQuestionsForStage(stage)
+
   const answerRows = Object.entries(answers).map(([idx, value]) => {
-    const q = QUESTIONS[parseInt(idx)]
-    return { assessment_id: assessment.id, question_index: parseInt(idx), section: SECTIONS[q.section].id, answer_value: value }
+    const q = filteredQuestions[parseInt(idx)]
+    const sectionName = filteredSections[q.section].id
+    return { assessment_id: assessment.id, question_index: parseInt(idx), section: sectionName, answer_value: value }
   })
   await db.from('answers').delete().eq('assessment_id', assessment.id)
   await db.from('answers').insert(answerRows)
