@@ -94,9 +94,9 @@ export default function Home() {
         <p style={{ color: 'var(--text-mid)', maxWidth: 560, fontWeight: 300, marginBottom: '3rem', lineHeight: 1.7 }}>PickMyPath uses three scientifically validated career assessment frameworks to give you a complete picture of your strengths, interests, and fit for different careers.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
           {[
-            ['🎯', 'Holland RIASEC', 'The world's most widely used career interest framework. We assess your natural preferences across six career interest types: Realistic, Investigative, Artistic, Social, Enterprising, and Conventional — then match you with careers that align.'],
+            ['🎯', 'Holland RIASEC', 'The world\'s most widely used career interest framework. We assess your natural preferences across six career interest types: Realistic, Investigative, Artistic, Social, Enterprising, and Conventional — then match you with careers that align.'],
             ['💼', 'Career Values', 'What matters most in your ideal career? We explore your work preferences, the type of environment you thrive in, subject interests, and personal values — ensuring your path aligns with what genuinely motivates you.'],
-            ['🧠', 'Aptitude Assessment', 'Based on proven aptitude frameworks (SDS, SII, MBTI, Kuder, CareerDirect), we evaluate your academic strengths, problem-solving abilities, and practical skills to identify careers where you'll naturally excel.'],
+            ['🧠', 'Aptitude Assessment', 'Based on proven aptitude frameworks (SDS, SII, MBTI, Kuder, CareerDirect), we evaluate your academic strengths, problem-solving abilities, and practical skills to identify careers where you\'ll naturally excel.'],
           ].map(([icon, title, desc]) => (
             <div key={title} style={{ background: 'var(--white)', borderRadius: 12, padding: '1.75rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{icon}</div>
