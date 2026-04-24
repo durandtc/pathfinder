@@ -103,19 +103,20 @@ export default async function handler(req, res) {
   - Audit log tracks all admin panel changes (who, what, when)
 - **Access**: JWT with `isAdmin: true` flag from session cookie
 
-### Questions & Assessment Data (Stage-Specific)
+### Questions & Assessment Data
 
 - **File**: `lib/questions.js`
+- **Scope**: High School only (Grade 8–12)
 - **Frameworks**: Holland RIASEC, Career Values, Aptitude (based on SDS, SII, MBTI, Kuder, CareerDirect)
-- **Structure**: Questions organized by section (interests, values, aptitude, parent observations, academic marks)
-- **Stage filtering**: Each question has a `stages` array specifying which career stages can see it
-  - **Students (Grade 8-12)**: See all ~49 questions including parent input section and academic marks
-  - **Working Adults/Career Change (gap_year, university_student, career_change, working_adult)**: See ~30 questions tailored to professionals (no parent section, no academic marks, no "favorite school subject" questions)
-- **Key function**: `getQuestionsForStage(stage)` returns filtered questions/sections based on user's grade/stage
-- **Example variants**:
-  - Students get "Which school subject do you enjoy?" → Adults get "Which aspect of work energises you?"
-  - Students get "What are your academic strengths?" → Adults get "What are your professional strengths?"
-- **Client submission**: POST `/api/assessment/submit` with answer array → API uses `getQuestionsForStage()` to validate answers against correct question set
+- **Structure**: 49 questions organized by section:
+  - **Section 1 (Interests)**: 15 RIASEC questions (Realistic, Investigative, Artistic, Social, Enterprising, Conventional)
+  - **Section 2 (Values)**: 7 questions about work preferences and subject interests
+  - **Section 3 (Aptitude)**: 15 questions about academic strengths and abilities
+  - **Section 4 (Parent Observations)**: 12 questions (filled by parent/guardian)
+  - **Section 5 (Marks)**: Academic subject marks input
+- **Stage filtering**: Each question has a `stages` array specifying which grades can see it (currently all: grade_8, grade_9, grade_10, grade_11, grade_12)
+- **Key function**: `getQuestionsForStage(stage)` returns filtered questions/sections based on user's grade
+- **Client submission**: POST `/api/assessment/submit` with answer array → API uses `getQuestionsForStage()` to validate answers
 
 ### Configuration & Stages
 
