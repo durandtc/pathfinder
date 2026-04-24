@@ -1,6 +1,6 @@
 # PickMyPath — Career Guidance Platform
 
-A Next.js web application providing AI-powered career guidance for South African Grade 9 students.
+A Next.js web application providing AI-powered career guidance for South African high school students (Grade 8–12).
 
 ---
 
