@@ -52,8 +52,8 @@ export default function Home() {
         <p style={{ color: 'var(--text-mid)', maxWidth: 620, fontWeight: 300, marginBottom: '3rem', lineHeight: 1.7 }}>Subject choices at Grade 9 are irreversible. But Grade 8 is the time to discover yourself. And Grades 10–12 need confirmation you're still on the right path.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
           {[
-            ['🔍', 'Grade 8', 'Get ahead. Discover your strengths before the pressure hits. Know what you're good at before you have to choose.'],
-            ['⭐', 'Grade 9', 'Make it count. You're about to lock in two years of subjects. Get this right — not lucky.'],
+            ['🔍', 'Grade 8', 'Get ahead. Discover your strengths before the pressure hits. Know what you\'re good at before you have to choose.'],
+            ['⭐', 'Grade 9', 'Make it count. You\'re about to lock in two years of subjects. Get this right — not lucky.'],
             ['✓', 'Grade 10–12', 'Stay on track. Confirm your subjects still fit. Set realistic NSC targets. Plan your post-school move with confidence.'],
           ].map(([icon, title, desc]) => (
             <div key={title} style={{ background: 'var(--white)', borderRadius: 12, padding: '1.75rem', border: title === 'Grade 9' ? '2px solid var(--gold)' : '1px solid var(--border)', boxShadow: 'var(--shadow)', position: 'relative' }}>
