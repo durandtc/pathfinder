@@ -40,13 +40,16 @@ npm start            # Start production server
   - Public client: `supabase` (uses anon key, safe for browser)
   - Server client: `supabaseAdmin()` (uses service role key, API routes only)
 - **Key tables**: `users`, `assessments`, `reports`, `payments`, `audit_logs`
-- **User flow stages tracked**:
+- **Users table fields**:
+  - `full_name` — account holder name (parent/guardian if they're registering for a child)
+  - `student_name` — the student being assessed (may differ from account holder)
   - `email_verified` (bool)
   - `payment_status` ("pending" | "completed" | null)
   - `assessment_status` ("not_started" | "in_progress" | "completed")
 - **Schema files** in repo root:
-  - `supabase-schema.sql` — core tables and RLS policies
+  - `supabase-schema.sql` — core tables, RLS policies, and migrations (includes student_name column migration)
   - `supabase-add-auth-columns.sql` — optional auth extensions
+- **Database migration required**: Run the `ALTER TABLE users ADD COLUMN student_name` migration from `supabase-schema.sql` in Supabase SQL Editor
 
 ### API Routes & Patterns
 
@@ -56,6 +59,7 @@ API endpoints follow this structure:
 ```
 
 - **Auth domain** (`pages/api/auth/`): register, login, verify email, password reset, Google OAuth, stage updates
+  - **Registration** (`pages/register.js` → `/api/auth/register`): Now captures both account holder name and student name separately
 - **Assessment domain** (`pages/api/assessment/`): submit answers, generate report (calls Claude), fetch user reports
 - **Payment domain** (`pages/api/payment/`): initiate PayFast transaction, verify payment callback
 - **Admin domain** (`pages/api/admin/`): protected routes requiring `getAdminFromRequest()` check, including config updates, user management, audit logging
@@ -72,18 +76,33 @@ export default async function handler(req, res) {
 }
 ```
 
-### AI Report Generation
+### AI Report Generation & Display
 
-- **File**: `lib/generateReport.js`
-- **Flow**: Anthropic Claude API processes 45 assessment answers → generates personalized career guidance report
-- **Model selection**: controlled by `AI_MODEL` env var (default: claude-haiku-4-5-20251001 for dev, use claude-sonnet-4-6 for production quality)
-- **Stored in DB**: `reports` table with `generated_at`, `career_paths`, `recommendations`
+- **Generation**: `lib/generateReport.js`
+  - Anthropic Claude API processes 45 assessment answers → generates personalized career guidance report
+  - Model selection: controlled by `AI_MODEL` env var (default: claude-haiku-4-5-20251001 for dev, use claude-sonnet-4-6 for production quality)
+  - Stored in DB: `reports` table with `generated_at`, `career_paths`, `recommendations`
+- **Display**: `pages/report/[id].js`
+  - Shows student's name (from `student_name` field) on report header
+  - Key sections: RIASEC profile, academic observations, top 3 careers, subject advice, parent note, motivational note
+  - **Readability improvements**: 
+    - Bullet points in key sections for easier scanning
+    - Highlighted boxes for "Your current position" section
+    - Visual hierarchy with icons and borders
+  - **Print/PDF styling**:
+    - A4 page alignment with proper margins (0.5in)
+    - Dark text color (#333) for better readability when printed
+    - Page-break-inside: avoid to prevent content splitting across pages
+    - Navigation and buttons hidden when printing
+    - Report starts at top of first page (no offset)
 
 ### Email & Notifications
 
-- **Service**: Resend API (`lib/sendEmail.js`)
+- **Service**: domains.co.za SMTP (via nodemailer) in `lib/sendEmail.js`
 - **Use cases**: email verification links, password reset, payment receipts
-- **Config**: `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` env vars
+- **SMTP Server**: `mail.pickmypath.co.za` (port 465 for SSL/TLS, 587 for TLS)
+- **Setup**: Create sender email (e.g., `noreply@pickmypath.co.za`) in domains.co.za cPanel; wait 2–3 hours for DNS/SSL propagation
+- **Config**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` env vars
 
 ### Payment Integration
 
@@ -113,7 +132,16 @@ export default async function handler(req, res) {
   - **Section 2 (Values)**: 7 questions about work preferences and subject interests
   - **Section 3 (Aptitude)**: 15 questions about academic strengths and abilities
   - **Section 4 (Parent Observations)**: 12 questions (filled by parent/guardian)
-  - **Section 5 (Marks)**: Academic subject marks input
+  - **Section 5 (Marks)**: Academic subject marks input using CAPS-aligned subjects
+- **CAPS Subjects**: `CAPS_SUBJECTS` array contains Grade 8–12 subjects aligned with South African curriculum:
+  - Languages: English, Afrikaans, isiZulu, isiXhosa, Sesotho, Setswana (Home and First Additional options)
+  - Mathematics: Mathematics, Mathematical Literacy
+  - Compulsory: Life Orientation
+  - Natural Sciences: Biology, Physics
+  - Social Sciences: Geography, History
+  - Economic and Management Sciences
+  - Technology
+  - Creative Arts: Visual Arts, Dramatic Arts, Music, Dance
 - **Stage filtering**: Each question has a `stages` array specifying which grades can see it (currently all: grade_8, grade_9, grade_10, grade_11, grade_12)
 - **Key function**: `getQuestionsForStage(stage)` returns filtered questions/sections based on user's grade
 - **Client submission**: POST `/api/assessment/submit` with answer array → API uses `getQuestionsForStage()` to validate answers
@@ -133,6 +161,7 @@ See `.env.local.example` for the full list. Key secrets required to run locally:
 - `ANTHROPIC_API_KEY` and `AI_MODEL`
 - `JWT_SECRET` (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD` (free choice for local testing)
+- `SMTP_HOST=mail.pickmypath.co.za`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER` (email address), `SMTP_PASS` (password)
 - `NEXT_PUBLIC_PAYFAST_SANDBOX=true` (default; set false to enable live payment processing)
 
 ---
@@ -151,11 +180,23 @@ See `.env.local.example` for the full list. Key secrets required to run locally:
 2. Update `lib/stageConfig.js` to reflect new eligibility rules
 3. Test the full flow: register → verify → payment → assessment submission → report generation
 
+### Adding subjects to the marks section
+1. Edit `CAPS_SUBJECTS` array in `lib/questions.js`
+2. Ensure subjects align with CAPS curriculum for Grade 8–12
+3. Test by submitting marks during assessment
+
+### Modifying the report display
+1. Edit `pages/report/[id].js` for styling/layout changes
+2. Edit `lib/generateReport.js` if changing AI prompt or response structure
+3. Use `student_name` from database (not `full_name`) for report headers
+4. Wrap content that should not break across pages with `className="print-no-break"`
+
 ### Deploying to production
-1. Set all env vars in Vercel project settings (copy from `.env.local`)
-2. Ensure `NEXT_PUBLIC_PAYFAST_SANDBOX=false` if live payments enabled
-3. Use `claude-sonnet-4-6` for `AI_MODEL` in production (Haiku is for testing)
-4. Deploy via Vercel UI (automatic on GitHub push)
+1. Run database migration: Add `student_name` column via Supabase SQL Editor (already in `supabase-schema.sql`)
+2. Set all env vars in Vercel project settings (copy from `.env.local`)
+3. Ensure `NEXT_PUBLIC_PAYFAST_SANDBOX=false` if live payments enabled
+4. Use `claude-sonnet-4-6` for `AI_MODEL` in production (Haiku is for testing)
+5. Deploy via Vercel UI (automatic on GitHub push)
 
 ---
 
