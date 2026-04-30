@@ -109,10 +109,16 @@ alter table system_config  enable row level security;
 alter table audit_log      enable row level security;
 
 -- Allow service role full access (used by API routes)
-create policy "Service role full access - users"         on users         for all using (true);
-create policy "Service role full access - payments"      on payments      for all using (true);
-create policy "Service role full access - assessments"   on assessments   for all using (true);
-create policy "Service role full access - answers"       on answers       for all using (true);
-create policy "Service role full access - reports"       on reports       for all using (true);
-create policy "Service role full access - system_config" on system_config for all using (true);
-create policy "Service role full access - audit_log"     on audit_log     for all using (true);
+create policy if not exists "Service role full access - users"         on users         for all using (true);
+create policy if not exists "Service role full access - payments"      on payments      for all using (true);
+create policy if not exists "Service role full access - assessments"   on assessments   for all using (true);
+create policy if not exists "Service role full access - answers"       on answers       for all using (true);
+create policy if not exists "Service role full access - reports"       on reports       for all using (true);
+create policy if not exists "Service role full access - system_config" on system_config for all using (true);
+create policy if not exists "Service role full access - audit_log"     on audit_log     for all using (true);
+
+-- ── MIGRATION: Add student_name field (separate from account holder name) ────
+-- Run this migration if you're adding the student name feature
+alter table users add column if not exists student_name text;
+-- For existing users, backfill student_name with full_name to maintain data consistency
+update users set student_name = full_name where student_name is null;

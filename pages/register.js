@@ -8,7 +8,7 @@ import { CAREER_STAGES, STAGE_GROUPS } from '../lib/stageConfig'
 
 export default function Register() {
   const router = useRouter()
-  const [form, setForm]     = useState({ fullName: '', email: '', password: '', stage: '', school: '' })
+  const [form, setForm]     = useState({ fullName: '', studentName: '', email: '', password: '', stage: '', school: '' })
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -55,8 +55,14 @@ export default function Register() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Full name</label>
-              <input className="form-input" type="text" placeholder="e.g. Thabo Nkosi" required value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} />
+              <label>Your full name <span style={{ color: 'var(--text-light)', fontWeight: 300 }}>(account holder)</span></label>
+              <input className="form-input" type="text" placeholder="e.g. John Nkosi" required value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} />
+            </div>
+
+            <div className="form-group">
+              <label>Student's name <span style={{ color: '#a32d2d' }}>*</span></label>
+              <input className="form-input" type="text" placeholder="e.g. Thabo Nkosi" required value={form.studentName} onChange={e => setForm({ ...form, studentName: e.target.value })} />
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '4px' }}>The student being assessed (may be you or your child)</p>
             </div>
 
             <div className="form-group">

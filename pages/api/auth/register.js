@@ -6,8 +6,8 @@ import { sendVerificationEmail } from '../../../lib/sendEmail'
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { fullName, email, password, stage, school } = req.body
-  if (!fullName || !email || !password) return res.status(400).json({ error: 'Name, email and password are required.' })
+  const { fullName, studentName, email, password, stage, school } = req.body
+  if (!fullName || !studentName || !email || !password) return res.status(400).json({ error: 'Full name, student name, email and password are required.' })
   if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' })
 
   const db = supabaseAdmin()
@@ -21,6 +21,7 @@ export default async function handler(req, res) {
 
   const { data: user, error } = await db.from('users').insert({
     full_name:           fullName,
+    student_name:        studentName,
     email,
     password_hash:       passwordHash,
     auth_provider:       'email',
@@ -47,6 +48,7 @@ export default async function handler(req, res) {
     user: {
       id:                  user.id,
       fullName:            user.full_name,
+      studentName:         user.student_name,
       email:               user.email,
       stage:               stage || null,
       emailVerified:       false,
