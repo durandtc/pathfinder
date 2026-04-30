@@ -8,9 +8,12 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
   const [showStageModal, setShowStageModal] = useState(false)
+  const [showStudentNameModal, setShowStudentNameModal] = useState(false)
   const [pendingUser, setPendingUser]  = useState(null)
   const [selectedStage, setSelectedStage] = useState('')
+  const [studentName, setStudentName] = useState('')
   const [savingStage, setSavingStage]  = useState(false)
+  const [savingStudentName, setSavingStudentName] = useState(false)
 
   async function handleGoogleSignIn() {
     setError('')
@@ -37,6 +40,15 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
       if (data.user.needsStage) {
         setPendingUser(data.user)
         setShowStageModal(true)
+        setLoading(false)
+        return
+      }
+
+      // If this Google user has no student name set yet — show the student name prompt
+      if (data.user.needsStudentName) {
+        setPendingUser(data.user)
+        setShowStudentNameModal(true)
+        setStudentName('')
         setLoading(false)
         return
       }
@@ -70,12 +82,53 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
         body: JSON.stringify({ userId: pendingUser.id, stage: selectedStage }),
       })
       const updatedUser = { ...pendingUser, stage: selectedStage, needsStage: false }
+      // If they also need to set student name, show that modal next
+      if (updatedUser.needsStudentName) {
+        setPendingUser(updatedUser)
+        setShowStageModal(false)
+        setShowStudentNameModal(true)
+        setStudentName('')
+      } else {
+        localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
+        router.push('/dashboard')
+      }
+    } catch {
+      // Even if save fails, let them in — stage can be set later
+      const updatedUser = { ...pendingUser, needsStage: false }
+      if (updatedUser.needsStudentName) {
+        setPendingUser(updatedUser)
+        setShowStageModal(false)
+        setShowStudentNameModal(true)
+        setStudentName('')
+      } else {
+        localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
+        router.push('/dashboard')
+      }
+    } finally {
+      setSavingStage(false)
+    }
+  }
+
+  async function handleStudentNameSubmit() {
+    if (!studentName.trim()) return
+    setSavingStudentName(true)
+    try {
+      const res = await fetch('/api/auth/update-student-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: pendingUser.id, studentName: studentName.trim() }),
+      })
+      if (!res.ok) throw new Error('Failed to save student name')
+
+      const updatedUser = { ...pendingUser, studentName: studentName.trim(), needsStudentName: false }
       localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
       router.push('/dashboard')
     } catch {
-      // Even if save fails, let them in — stage can be set later
-      localStorage.setItem('pmp_user', JSON.stringify({ ...pendingUser, needsStage: false }))
+      // Even if save fails, let them in — student name can be set later
+      localStorage.setItem('pmp_user', JSON.stringify({ ...pendingUser, needsStudentName: false }))
       router.push('/dashboard')
+    } finally {
+      setSavingStudentName(false)
     }
   }
 
@@ -137,6 +190,39 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
               style={{ width: '100%', padding: '13px', background: selectedStage ? 'var(--navy)' : 'var(--border)', color: selectedStage ? '#fff' : 'var(--text-light)', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: selectedStage ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}
             >
               {savingStage ? 'Saving...' : 'Continue to Dashboard →'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Student name modal for Google users without student_name set */}
+      {showStudentNameModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,61,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'var(--white)', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', fontSize: '1.4rem', marginBottom: '0.5rem' }}>
+              Student's Name
+            </h3>
+            <p style={{ color: 'var(--text-mid)', fontSize: '0.875rem', marginBottom: '1.25rem', lineHeight: 1.6, fontWeight: 300 }}>
+              We see you signed in as {pendingUser?.fullName}. What is the student's name who will be taking this assessment? (This may be different if a parent is setting this up for their child.)
+            </p>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--navy)', marginBottom: 8 }}>
+              Student's Name <span style={{ color: '#a32d2d' }}>*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Thabo Nkosi"
+              value={studentName}
+              onChange={e => setStudentName(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && handleStudentNameSubmit()}
+              style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: '0.95rem', background: 'var(--cream)', color: 'var(--text-dark)', marginBottom: '1.25rem', boxSizing: 'border-box' }}
+              autoFocus
+            />
+            <button
+              onClick={handleStudentNameSubmit}
+              disabled={!studentName.trim() || savingStudentName}
+              style={{ width: '100%', padding: '13px', background: studentName.trim() ? 'var(--navy)' : 'var(--border)', color: studentName.trim() ? '#fff' : 'var(--text-light)', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: studentName.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}
+            >
+              {savingStudentName ? 'Saving...' : 'Continue to Dashboard →'}
             </button>
           </div>
         </div>

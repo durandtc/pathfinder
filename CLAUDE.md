@@ -58,8 +58,13 @@ API endpoints follow this structure:
 /pages/api/[domain]/[action].js
 ```
 
-- **Auth domain** (`pages/api/auth/`): register, login, verify email, password reset, Google OAuth, stage updates
-  - **Registration** (`pages/register.js` → `/api/auth/register`): Now captures both account holder name and student name separately
+- **Auth domain** (`pages/api/auth/`): register, login, verify email, password reset, Google OAuth, stage/student name updates
+  - **Registration** (`pages/register.js` → `/api/auth/register`): Captures both account holder name and student name separately
+  - **Google OAuth** (`/api/auth/google`): 
+    - Creates user with Google display name as `full_name` and `student_name` as null
+    - Returns `needsStage` and `needsStudentName` flags
+    - Frontend shows stage modal first (if needed), then student name modal (if needed)
+  - **Update student name** (`/api/auth/update-student-name`): API endpoint to save student name after Google sign-in
 - **Assessment domain** (`pages/api/assessment/`): submit answers, generate report (calls Claude), fetch user reports
 - **Payment domain** (`pages/api/payment/`): initiate PayFast transaction, verify payment callback
 - **Admin domain** (`pages/api/admin/`): protected routes requiring `getAdminFromRequest()` check, including config updates, user management, audit logging
@@ -205,4 +210,46 @@ See `.env.local.example` for the full list. Key secrets required to run locally:
 - **No automated test suite** — test manually via `npm run dev` and browser at http://localhost:3000
 - **PayFast sandbox** allows full payment flow testing without real transactions
 - **Admin panel** accessible with env var credentials on `/admin`
+
+---
+
+## Recent Updates (April 2026)
+
+### Student Name Feature
+- **Database**: Added `student_name` column to users table (separate from `full_name`) to support parents registering for their children
+- **Registration Flow** (`pages/register.js`): Now asks for both account holder name and student's name
+- **Google OAuth** (`components/GoogleSignInButton.js` + `/api/auth/google.js`): After sign-in, prompts for student name if not already set (handles case where parent uses their Google account)
+- **New API**: `/api/auth/update-student-name` — saves student name to database
+- **Report Display**: Student name appears on report header (from `student_name` field, not account holder's `full_name`)
+
+### CAPS-Aligned Subjects
+- **Updated** `CAPS_SUBJECTS` in `lib/questions.js` to include only Grade 8–12 subjects that match South African CAPS curriculum
+- **Subjects now include**: Languages (English, Afrikaans, isiZulu, isiXhosa, Sesotho, Setswana), Mathematics, Life Orientation, Natural Sciences (Biology/Physics), Social Sciences (Geography/History), Economic and Management Sciences, Technology, Creative Arts (Visual Arts, Dramatic Arts, Music, Dance)
+- **Removed**: Excessive options like Civil Technology, Electrical Technology, Computer Applications Technology, etc.
+
+### Report Improvements
+- **Readability**: Added bullet points to key sections (career summary, subject advice, parent note, motivational note) to improve scannability
+- **Visual Design**: Enhanced visual hierarchy with highlighted boxes for "Your current position" section and improved borders/spacing
+- **Print/PDF Styling**:
+  - Fixed text color from light gray to dark gray (#333) for better readability when printed
+  - Proper A4 page alignment (0.5in margins)
+  - Report starts at top of first page (no offset)
+  - Page-break-inside: avoid on content sections to prevent splitting across pages
+  - Navigation and buttons hidden when printing
+
+### Database Migration
+- **Required**: Run the student_name migration from `supabase-schema.sql` in Supabase SQL Editor before deploying
+- **Schema Fix**: Updated all RLS policies to use `if not exists` to make schema file idempotent (safe to run multiple times)
+
+### Files Modified
+- `lib/questions.js` — Updated CAPS_SUBJECTS
+- `supabase-schema.sql` — Added student_name migration + fixed policies
+- `pages/register.js` — Added student name field to form
+- `pages/api/auth/register.js` — Accepts and stores student_name
+- `pages/api/auth/google.js` — Sets needsStudentName flag
+- `pages/api/auth/update-student-name.js` — New endpoint to save student name
+- `pages/api/assessment/report.js` — Fetches and returns student name
+- `pages/report/[id].js` — Displays student name, added bullet points, improved print styling
+- `components/GoogleSignInButton.js` — Added student name prompt modal
+- `CLAUDE.md` — Updated documentation
 

@@ -17,6 +17,7 @@ export default async function handler(req, res) {
   if (!user) {
     const { data: newUser, error } = await db.from('users').insert({
       full_name:      displayName || email.split('@')[0],
+      student_name:   null,  // will be prompted for later
       email,
       auth_provider:  'google',
       google_uid:     uid,
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
     user: {
       id:                     user.id,
       fullName:               user.full_name,
+      studentName:            user.student_name,
       email:                  user.email,
       photoURL:               photoURL || null,
       stage:                  user.grade || null,
@@ -52,6 +54,7 @@ export default async function handler(req, res) {
       hasCompletedAssessment: !!completedA,
       latestReportId:         report?.id || null,
       needsStage:             !user.grade,  // flag if stage not yet set
+      needsStudentName:       !user.student_name,  // flag if student name not set
     },
   })
 }
