@@ -8,14 +8,16 @@ import { CAREER_STAGES, STAGE_GROUPS } from '../lib/stageConfig'
 
 export default function Register() {
   const router = useRouter()
-  const [form, setForm]     = useState({ fullName: '', studentName: '', email: '', password: '', stage: '', school: '' })
+  const [form, setForm]     = useState({ fullName: '', studentName: '', email: '', password: '', passwordConfirm: '', stage: '', school: '' })
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
+  const [passwordMismatch, setPasswordMismatch] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     if (!form.stage) { setError('Please select your current grade or career stage.'); return }
+    if (form.password !== form.passwordConfirm) { setError('Passwords do not match. Please check and try again.'); return }
     setLoading(true)
     try {
       const res  = await fetch('/api/auth/register', {
@@ -72,7 +74,21 @@ export default function Register() {
 
             <div className="form-group">
               <label>Password</label>
-              <input className="form-input" type="password" placeholder="Minimum 8 characters" required value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+              <input className="form-input" type="password" placeholder="Minimum 8 characters" required value={form.password} onChange={e => { setForm({ ...form, password: e.target.value }); setPasswordMismatch(false) }} />
+            </div>
+
+            <div className="form-group">
+              <label>Confirm password</label>
+              <input
+                className="form-input"
+                type="password"
+                placeholder="Re-enter your password"
+                required
+                value={form.passwordConfirm}
+                onChange={e => { setForm({ ...form, passwordConfirm: e.target.value }); setPasswordMismatch(e.target.value && form.password && e.target.value !== form.password) }}
+                style={{ borderColor: passwordMismatch ? '#a32d2d' : 'var(--border)' }}
+              />
+              {passwordMismatch && <p style={{ fontSize: '0.75rem', color: '#a32d2d', marginTop: '4px' }}>Passwords do not match</p>}
             </div>
 
             {/* Career stage dropdown — the key new field */}
@@ -103,7 +119,7 @@ export default function Register() {
 
             {error && <p className="error-msg" style={{ marginBottom: 10 }}>{error}</p>}
 
-            <button type="submit" disabled={loading} style={{ width: '100%', padding: '13px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: 'pointer', marginTop: '0.25rem', opacity: loading ? 0.7 : 1 }}>
+            <button type="submit" disabled={loading || passwordMismatch || !form.password || !form.passwordConfirm} style={{ width: '100%', padding: '13px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: loading || passwordMismatch || !form.password || !form.passwordConfirm ? 'not-allowed' : 'pointer', marginTop: '0.25rem', opacity: (loading || passwordMismatch || !form.password || !form.passwordConfirm) ? 0.7 : 1 }}>
               {loading ? 'Creating account...' : 'Create account & continue'}
             </button>
           </form>

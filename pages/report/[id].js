@@ -4,6 +4,8 @@ import { useRouter } from 'next/router'
 import Nav from '../../components/Nav'
 import Link from 'next/link'
 import { getStageConfig, isSchoolLearner } from '../../lib/stageConfig'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 const PRINT_STYLES = `
   @media print {
@@ -17,6 +19,14 @@ const PRINT_STYLES = `
     @page { margin: 0.5in; size: A4; }
   }
 `
+
+function MarkdownContent({ children, className = '' }) {
+  return (
+    <div className={`report-md ${className}`}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children || ''}</ReactMarkdown>
+    </div>
+  )
+}
 
 const AI_COLOR = { high: '#2d7a4f', medium: '#854f0b', low: '#a32d2d' }
 const AI_BG    = { high: '#f0fff4', medium: '#fff8ec', low: '#fff0f0' }
@@ -86,9 +96,13 @@ export default function ReportPage() {
 
           {/* Stage context */}
           {rd?.stage_context && (
-            <p style={{ color: '#333', fontSize: '0.875rem', lineHeight: 1.6, fontWeight: 400, marginBottom: '1rem', fontStyle: 'italic' }}>
+            <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.875rem', lineHeight: 1.6, fontWeight: 400, marginBottom: '0.75rem', fontStyle: 'italic' }}>
               {rd.stage_context}
             </p>
+          )}
+
+          {(rd?.stage_context || riasec?.dominant_types?.length > 0) && riasec?.summary && (
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(201,151,58,0.3)', margin: '0.75rem 0' }} />
           )}
 
           {riasec?.dominant_types?.length > 0 && (
@@ -98,7 +112,7 @@ export default function ReportPage() {
               </span>
             </div>
           )}
-          {riasec?.summary && <p style={{ color: '#333', fontSize: '0.9rem', lineHeight: 1.7, fontWeight: 400, margin: 0 }}>{riasec.summary}</p>}
+          {riasec?.summary && <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.9rem', lineHeight: 1.7, fontWeight: 400, margin: 0 }}>{riasec.summary}</p>}
         </div>
 
         {/* Academic / background observations */}
@@ -107,11 +121,7 @@ export default function ReportPage() {
             <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', fontSize: '1rem', marginBottom: '0.5rem' }}>
               {schoolLearner ? '📊 What your marks tell us' : '📊 What your background tells us'}
             </h3>
-            <ul style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: '0 0 0 1.2rem', paddingLeft: 0 }}>
-              {rd.academic_observations?.split('\n').filter(s => s.trim()).map((line, idx) => (
-                <li key={idx} style={{ marginBottom: '0.5rem' }}>{line.trim()}</li>
-              ))}
-            </ul>
+            <MarkdownContent>{rd.academic_observations}</MarkdownContent>
           </div>
         )}
 
@@ -131,11 +141,7 @@ export default function ReportPage() {
 
             <div style={{ padding: '1.25rem 1.5rem' }}>
               <SectionLabel>About this career</SectionLabel>
-              <ul style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: '0 0 0 1.2rem', paddingLeft: 0 }}>
-                {c.summary?.split('\n').filter(s => s.trim()).map((line, idx) => (
-                  <li key={idx} style={{ marginBottom: '0.5rem' }}>{line.trim()}</li>
-                ))}
-              </ul>
+              <MarkdownContent>{c.summary}</MarkdownContent>
 
               {c.current_position_assessment && (
                 <>
@@ -177,11 +183,7 @@ export default function ReportPage() {
             <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>
               {schoolLearner ? '📚 Subject selection advice' : '🗺 Your next steps'}
             </h3>
-            <ul style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: '0 0 0 1.2rem', paddingLeft: 0 }}>
-              {rd.subject_or_next_steps_advice?.split('\n').filter(s => s.trim()).map((line, idx) => (
-                <li key={idx} style={{ marginBottom: '0.5rem' }}>{line.trim()}</li>
-              ))}
-            </ul>
+            <MarkdownContent>{rd.subject_or_next_steps_advice}</MarkdownContent>
           </div>
         )}
 
@@ -191,11 +193,9 @@ export default function ReportPage() {
             <h3 style={{ fontFamily: 'Georgia,serif', color: '#3c3489', marginBottom: '0.75rem', fontSize: '1.1rem' }}>
               👨‍👩‍👧 A note for your support person
             </h3>
-            <ul style={{ fontSize: '0.9rem', color: '#534ab7', lineHeight: 1.7, margin: '0 0 0 1.2rem', paddingLeft: 0 }}>
-              {rd.parent_note?.split('\n').filter(s => s.trim()).map((line, idx) => (
-                <li key={idx} style={{ marginBottom: '0.5rem' }}>{line.trim()}</li>
-              ))}
-            </ul>
+            <div style={{ color: '#534ab7' }}>
+              <MarkdownContent>{rd.parent_note}</MarkdownContent>
+            </div>
           </div>
         )}
 
@@ -203,11 +203,7 @@ export default function ReportPage() {
         {rd?.motivational_note && (
           <div style={{ background: '#f0fff4', borderRadius: 12, padding: '1.5rem', marginBottom: '2rem', border: '1px solid #d5f0dc', pageBreakInside: 'avoid' }} className="print-no-break">
             <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>💡 A note for you</h3>
-            <ul style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: '0 0 0 1.2rem', paddingLeft: 0 }}>
-              {rd.motivational_note?.split('\n').filter(s => s.trim()).map((line, idx) => (
-                <li key={idx} style={{ marginBottom: '0.5rem' }}>{line.trim()}</li>
-              ))}
-            </ul>
+            <MarkdownContent>{rd.motivational_note}</MarkdownContent>
           </div>
         )}
 

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node *)",
+      "Bash(cat)",
+      "Read(//tmp/**)",
+      "WebSearch",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/)"
+    ]
+  }
+}
