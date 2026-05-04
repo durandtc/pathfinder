@@ -86,17 +86,22 @@ export default async function handler(req, res) {
 - **Generation**: `lib/generateReport.js`
   - Anthropic Claude API processes 45 assessment answers → generates personalized career guidance report
   - Model selection: controlled by `AI_MODEL` env var (default: claude-haiku-4-5-20251001 for dev, use claude-sonnet-4-6 for production quality)
+  - AI prompt allows markdown formatting (bold `**text**`, bullets `*`, tables `|`) inside JSON field values for structured content
   - Stored in DB: `reports` table with `generated_at`, `career_paths`, `recommendations`
 - **Display**: `pages/report/[id].js`
   - Shows student's name (from `student_name` field) on report header
   - Key sections: RIASEC profile, academic observations, top 3 careers, subject advice, parent note, motivational note
-  - **Readability improvements**: 
-    - Bullet points in key sections for easier scanning
-    - Highlighted boxes for "Your current position" section
-    - Visual hierarchy with icons and borders
+  - **Markdown rendering** (using `react-markdown` + `remark-gfm`):
+    - All multi-line text fields render with full markdown support (paragraphs, bold, bullets, tables)
+    - Subject comparison tables render as proper HTML tables with navy headers and alternating row colors
+    - Parent notes and motivational notes render as clean prose (not forced into bullet lists)
+    - `MarkdownContent` component wraps ReactMarkdown for consistent styling via `.report-md` CSS class
+  - **Text color improvements**:
+    - Header section text (stage context + RIASEC summary) now uses `rgba(255,255,255,0.88)` (clear white) instead of #333 (nearly invisible on navy)
+    - Gold divider line added between stage context and RIASEC badge for visual separation
   - **Print/PDF styling**:
     - A4 page alignment with proper margins (0.5in)
-    - Dark text color (#333) for better readability when printed
+    - Professional table styling with visible borders and alternating row colors
     - Page-break-inside: avoid to prevent content splitting across pages
     - Navigation and buttons hidden when printing
     - Report starts at top of first page (no offset)
@@ -252,4 +257,74 @@ See `.env.local.example` for the full list. Key secrets required to run locally:
 - `pages/report/[id].js` — Displays student name, added bullet points, improved print styling
 - `components/GoogleSignInButton.js` — Added student name prompt modal
 - `CLAUDE.md` — Updated documentation
+
+---
+
+## Recent Updates (May 2026)
+
+### Report Presentation Overhaul
+
+Critical improvements to the report display to deliver a professional, customer-facing product.
+
+#### Dependencies Added
+- **`react-markdown`** — Render markdown safely (no dangerouslySetInnerHTML) in React components
+- **`remark-gfm`** — GitHub Flavored Markdown support, enables pipe tables in markdown output
+
+#### Bug Fixes
+
+**1. Unreadable Header Text**
+- **Problem**: Stage context and RIASEC summary paragraphs used `color: '#333'` (dark gray) on navy background — nearly invisible
+- **Fix**: Changed to `color: 'rgba(255,255,255,0.88)'` for clear readability
+- **Also**: Added a thin gold divider line between sections for visual separation
+
+**2. Markdown Artifacts in Subject Advice**
+- **Problem**: AI generates structured markdown (`**bold**`, `*bullets*`, `| tables |`) inside JSON field values, but frontend was rendering raw text
+- **Solution**: Created `MarkdownContent` component that wraps ReactMarkdown with `remark-gfm`, replacing all naive `.split('\n').map(<li>)` patterns
+- **Result**: Subject comparison tables now render as proper HTML tables; bold text is bold; bullets are proper lists
+
+#### Component & Styling Changes
+
+**New Component**: `MarkdownContent` in `pages/report/[id].js`
+- Wraps `ReactMarkdown` with `remark-gfm` plugin
+- Applies `.report-md` CSS class for consistent styling
+- Accepts `className` prop for additional styling
+
+**Markdown Content Rendering**:
+- `rd.academic_observations` — Now renders prose/bullets properly
+- `c.summary` (career summaries) — 2-3 sentence paragraphs render as clean prose
+- `rd.subject_or_next_steps_advice` — Tables, sub-headings, and bullets render correctly
+- `rd.parent_note` — Prose paragraph renders without forced bullets
+- `rd.motivational_note` — Warm paragraph renders with proper formatting
+
+**New CSS in `styles/globals.css`** (`.report-md` class):
+- Paragraph and list styling with proper spacing
+- Professional table styling:
+  - Navy headers with white text
+  - Alternating row colors for readability
+  - Proper padding and borders
+- Bold, italic, and heading support
+- All styling scoped to `.report-md` to avoid affecting other parts of the app
+
+#### AI Prompt Updates (`lib/generateReport.js`)
+
+- Changed instruction from "no markdown, no preamble" to "no preamble, no text outside JSON — markdown allowed inside field values"
+- Enhanced `subject_or_next_steps_advice` field description to explicitly encourage:
+  - Bold career names (e.g., `**Rank 1: UX/UI Designer**`)
+  - Markdown tables for subject comparisons
+  - Bullet points for clarity
+- This tells the AI it can structure information clearly without fighting markdown restrictions
+
+#### Files Modified
+- `package.json` — Added react-markdown, remark-gfm
+- `pages/report/[id].js` — Added MarkdownContent component, fixed header colors, replaced split/map patterns
+- `lib/generateReport.js` — Updated AI prompt instructions
+- `styles/globals.css` — Added `.report-md` styling for tables, paragraphs, lists, bold/italic
+- `CLAUDE.md` — Updated documentation
+
+#### Customer Impact
+- Report header is now readable (critical fix)
+- Subject advice section displays correctly with formatted tables and text (critical fix)
+- All prose sections render cleanly without forced bullet lists
+- Overall professional presentation suitable for paying customers
+- Print/PDF export maintains visual quality and readability
 
