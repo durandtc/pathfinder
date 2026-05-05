@@ -34,6 +34,27 @@ npm start            # Start production server
 - **Password hashing**: bcryptjs (10 salt rounds)
 - **Admin panel** (`/admin`) requires `ADMIN_EMAIL` and `ADMIN_PASSWORD` env vars; login creates admin JWT
 
+### Google OAuth & Firebase Configuration
+
+- **Firebase Project**: `pathfinder-55a19` (Project ID)
+- **Google OAuth**: Uses Firebase for OAuth integration with Google Sign-In
+- **Key distinction**: Firebase has two separate configuration points:
+  1. **Firebase Console → Authorized Domains** — whitelist of domains where auth can redirect *to* (passive allow-list)
+  2. **Google Cloud Console → OAuth 2.0 Client Credentials → Authorized redirect URIs** — active list of where OAuth can redirect (must be explicitly configured)
+- **Common issue**: Domain whitelisted in Firebase but OAuth redirects still go to Firebase default domain because Google Cloud OAuth credentials lack the redirect URI configuration
+- **Setup checklist**:
+  1. Go to **Google Cloud Console** → **APIs & Services** → **Credentials**
+  2. Find the OAuth 2.0 Client ID (type: Web application)
+  3. Add **both** `https://www.pickmypath.co.za/api/auth/google/callback` and `https://pickmypath.co.za/api/auth/google/callback` to **Authorized redirect URIs**
+  4. Also whitelist both domains in **Firebase Console** → **Authentication** → **Settings** → **Authorized domains**
+  5. Verify `.env.local` has `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` pointing to custom domain (not Firebase default)
+- **Environment variables required**:
+  - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase project ID
+  - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase API key from web app config
+  - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` — custom auth domain for redirects (e.g., `pickmypath.co.za`)
+  - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — OAuth client ID from Google Cloud Console
+- **Testing**: After updating, test login from actual domain (not localhost) to verify redirect works
+
 ### Database & Data Layer
 
 - **Supabase (PostgreSQL)** via `lib/supabase.js`:
@@ -167,12 +188,17 @@ export default async function handler(req, res) {
 ## Environment Variables
 
 See `.env.local.example` for the full list. Key secrets required to run locally:
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- `ANTHROPIC_API_KEY` and `AI_MODEL`
-- `JWT_SECRET` (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
-- `ADMIN_EMAIL`, `ADMIN_PASSWORD` (free choice for local testing)
-- `SMTP_HOST=mail.pickmypath.co.za`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER` (email address), `SMTP_PASS` (password)
-- `NEXT_PUBLIC_PAYFAST_SANDBOX=true` (default; set false to enable live payment processing)
+- **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- **Anthropic AI**: `ANTHROPIC_API_KEY` and `AI_MODEL`
+- **JWT Auth**: `JWT_SECRET` (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+- **Admin Credentials**: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (free choice for local testing)
+- **Firebase & Google OAuth**:
+  - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase project ID (e.g., `pathfinder-55a19`)
+  - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase web app API key
+  - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` — custom domain for auth redirects (e.g., `pickmypath.co.za`)
+  - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — OAuth 2.0 Client ID from Google Cloud Console
+- **Email**: `SMTP_HOST=mail.pickmypath.co.za`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER` (email address), `SMTP_PASS` (password)
+- **Payments**: `NEXT_PUBLIC_PAYFAST_SANDBOX=true` (default; set false to enable live payment processing)
 
 ---
 
@@ -327,4 +353,21 @@ Critical improvements to the report display to deliver a professional, customer-
 - All prose sections render cleanly without forced bullet lists
 - Overall professional presentation suitable for paying customers
 - Print/PDF export maintains visual quality and readability
+
+### Firebase Google OAuth Configuration
+
+**Problem**: Google OAuth redirects were still using Firebase default domain (`pathfinder-55a19.firebaseapp.com`) even after adding custom domains to Firebase's authorized domains list.
+
+**Root Cause**: Firebase's "Authorized domains" is a whitelist for where auth can redirect *to*, but Google's OAuth credentials require explicit redirect URI configuration. These are two separate systems that must both be configured.
+
+**Solution**: Updated documentation and setup checklist in "Google OAuth & Firebase Configuration" section to clarify the distinction and provide step-by-step configuration.
+
+**Configuration Steps**:
+1. **Google Cloud Console** → Add redirect URIs for both `www.pickmypath.co.za` and `pickmypath.co.za`
+2. **Firebase Console** → Whitelist both domains in Authentication settings
+3. **Environment** → Ensure `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` is set to custom domain
+4. **Test** → Login from actual domain to verify redirect behavior
+
+#### Files Modified
+- `CLAUDE.md` — Added Firebase OAuth troubleshooting and configuration details to "Google OAuth & Firebase Configuration" section and "Environment Variables" section
 

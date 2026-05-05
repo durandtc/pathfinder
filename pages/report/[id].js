@@ -13,13 +13,40 @@ const PRINT_STYLES = `
     html { margin: 0; padding: 0; }
     nav, .action-buttons { display: none !important; }
     .print-no-break { page-break-inside: avoid; }
-    .report-header { page-break-after: avoid; }
-    .report-header h1 { color: #000 !important; }
-    .report-header p { color: #333 !important; }
-    .report-header hr { border-top-color: #ccc !important; }
-    .career-card { page-break-inside: avoid; }
-    div[role="main"] { margin: 0; padding: 1.5rem !important; max-width: 100%; }
+    .report-header { page-break-after: avoid; margin-bottom: 0.8rem !important; padding: 1.5rem !important; }
+    .report-header h1 { color: #000 !important; margin-bottom: 0.25rem !important; font-size: 1.4rem !important; }
+    .report-header p { color: #333 !important; margin-bottom: 0.4rem !important; font-size: 0.75rem !important; }
+    .report-header hr { border-top-color: #ccc !important; margin: 0.4rem 0 !important; }
+    .career-card { page-break-inside: avoid; margin-bottom: 0.8rem !important; }
+    .career-card > div:first-child { padding: 0.9rem 1rem !important; }
+    .career-card > div:last-child { padding: 0.9rem 1rem !important; }
+    div[role="main"] { margin: 0; padding: 0.75rem !important; max-width: 100%; }
     @page { margin: 0.5in; size: A4; }
+
+    /* Tighten report content spacing */
+    div[style*="background: #f0f7ff"], div[style*="background: #eeedfe"], div[style*="background: #f0fff4"] {
+      margin-bottom: 0.6rem !important;
+      padding: 0.9rem 1rem !important;
+    }
+
+    /* Compress markdown content */
+    .report-md p { margin-bottom: 0.25rem !important; font-size: 0.85rem !important; line-height: 1.4 !important; }
+    .report-md ul { margin: 0 0 0.25rem 1rem !important; padding: 0 !important; }
+    .report-md ul li { margin-bottom: 0.15rem !important; font-size: 0.85rem !important; line-height: 1.4 !important; }
+    .report-md table { margin: 0.4rem 0 !important; font-size: 0.75rem !important; }
+    .report-md th { padding: 5px 8px !important; font-size: 0.75rem !important; }
+    .report-md td { padding: 4px 8px !important; font-size: 0.75rem !important; }
+
+    /* Section labels */
+    h4[style*="textTransform"] { margin-bottom: 0.3rem !important; margin-top: 0.6rem !important; font-size: 0.6rem !important; }
+    h3[style*="fontFamily"] { margin-bottom: 0.35rem !important; font-size: 0.95rem !important; }
+
+    /* Subject tags */
+    span[style*="background: #e8f0f8"], span[style*="background: #e8f5e8"] {
+      font-size: 0.7rem !important;
+      padding: 2px 6px !important;
+      margin-bottom: 3px !important;
+    }
   }
 `
 
