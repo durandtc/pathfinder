@@ -11,9 +11,12 @@ const PRINT_STYLES = `
   @media print {
     body { margin: 0; padding: 0; background: #fff; }
     html { margin: 0; padding: 0; }
-    nav, .no-print { display: none !important; }
+    nav, .action-buttons { display: none !important; }
     .print-no-break { page-break-inside: avoid; }
     .report-header { page-break-after: avoid; }
+    .report-header h1 { color: #000 !important; }
+    .report-header p { color: #333 !important; }
+    .report-header hr { border-top-color: #ccc !important; }
     .career-card { page-break-inside: avoid; }
     div[role="main"] { margin: 0; padding: 1.5rem !important; max-width: 100%; }
     @page { margin: 0.5in; size: A4; }
@@ -208,7 +211,7 @@ export default function ReportPage() {
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }} className="no-print" style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', marginTop: '2rem' }} className="action-buttons">
           <button onClick={() => window.print()} style={{ flex: 1, minWidth: 140, padding: '13px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500 }}>
             🖨 Print / Save as PDF
           </button>
@@ -217,7 +220,7 @@ export default function ReportPage() {
           </Link>
         </div>
 
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', textAlign: 'center' }} className="no-print">
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', textAlign: 'center', marginTop: '1rem' }}>
           PickMyPath is a guidance tool based on Holland RIASEC + academic performance analysis. We recommend discussing your results with a registered career guidance professional.
         </p>
       </div>
