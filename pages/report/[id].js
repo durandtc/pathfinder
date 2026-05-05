@@ -9,43 +9,55 @@ import remarkGfm from 'remark-gfm'
 
 const PRINT_STYLES = `
   @media print {
+    * { orphans: 3; widows: 3; }
     body { margin: 0; padding: 0; background: #fff; }
     html { margin: 0; padding: 0; }
     nav, .action-buttons { display: none !important; }
-    .print-no-break { page-break-inside: avoid; }
-    .report-header { page-break-after: avoid; margin-bottom: 0.8rem !important; padding: 1.5rem !important; }
-    .report-header h1 { color: #000 !important; margin-bottom: 0.25rem !important; font-size: 1.4rem !important; }
-    .report-header p { color: #333 !important; margin-bottom: 0.4rem !important; font-size: 0.75rem !important; }
-    .report-header hr { border-top-color: #ccc !important; margin: 0.4rem 0 !important; }
-    .career-card { page-break-inside: avoid; margin-bottom: 0.8rem !important; }
-    .career-card > div:first-child { padding: 0.9rem 1rem !important; }
-    .career-card > div:last-child { padding: 0.9rem 1rem !important; }
-    div[role="main"] { margin: 0; padding: 0.75rem !important; max-width: 100%; }
-    @page { margin: 0.5in; size: A4; }
+    .print-no-break { page-break-inside: avoid !important; break-inside: avoid !important; }
+    .report-header { page-break-after: avoid; margin-bottom: 0.4rem !important; padding: 1rem !important; }
+    .report-header h1 { color: #000 !important; margin-bottom: 0.15rem !important; font-size: 1.2rem !important; }
+    .report-header p { color: #333 !important; margin-bottom: 0.2rem !important; font-size: 0.7rem !important; }
+    .report-header hr { border-top-color: #ccc !important; margin: 0.3rem 0 !important; }
+    .career-card { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 0.5rem !important; }
+    .career-card > div:first-child { padding: 0.8rem 0.9rem !important; }
+    .career-card > div:last-child { padding: 0.8rem 0.9rem !important; }
+    div[role="main"] { margin: 0; padding: 0.4rem !important; max-width: 100%; }
+    @page { margin: 0.3in 0.4in; size: A4; }
 
     /* Tighten report content spacing */
     div[style*="background: #f0f7ff"], div[style*="background: #eeedfe"], div[style*="background: #f0fff4"] {
-      margin-bottom: 0.6rem !important;
-      padding: 0.9rem 1rem !important;
+      margin-bottom: 0.3rem !important;
+      padding: 0.7rem 0.9rem !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
 
     /* Compress markdown content */
-    .report-md p { margin-bottom: 0.25rem !important; font-size: 0.85rem !important; line-height: 1.4 !important; }
-    .report-md ul { margin: 0 0 0.25rem 1rem !important; padding: 0 !important; }
-    .report-md ul li { margin-bottom: 0.15rem !important; font-size: 0.85rem !important; line-height: 1.4 !important; }
-    .report-md table { margin: 0.4rem 0 !important; font-size: 0.75rem !important; }
-    .report-md th { padding: 5px 8px !important; font-size: 0.75rem !important; }
-    .report-md td { padding: 4px 8px !important; font-size: 0.75rem !important; }
+    .report-md { margin: 0 !important; }
+    .report-md p { margin: 0 0 0.15rem 0 !important; font-size: 0.8rem !important; line-height: 1.35 !important; }
+    .report-md ul { margin: 0.1rem 0 0.1rem 0.9rem !important; padding: 0 !important; }
+    .report-md ul li { margin-bottom: 0.08rem !important; font-size: 0.8rem !important; line-height: 1.3 !important; }
+    .report-md table { margin: 0.25rem 0 !important; font-size: 0.7rem !important; width: 100%; }
+    .report-md th { padding: 3px 5px !important; font-size: 0.7rem !important; }
+    .report-md td { padding: 2px 4px !important; font-size: 0.7rem !important; }
 
     /* Section labels */
-    h4[style*="textTransform"] { margin-bottom: 0.3rem !important; margin-top: 0.6rem !important; font-size: 0.6rem !important; }
-    h3[style*="fontFamily"] { margin-bottom: 0.35rem !important; font-size: 0.95rem !important; }
+    h4[style*="textTransform"] { margin-bottom: 0.15rem !important; margin-top: 0.35rem !important; font-size: 0.55rem !important; }
+    h3[style*="fontFamily"] { margin-bottom: 0.2rem !important; font-size: 0.85rem !important; }
 
     /* Subject tags */
     span[style*="background: #e8f0f8"], span[style*="background: #e8f5e8"] {
-      font-size: 0.7rem !important;
-      padding: 2px 6px !important;
-      margin-bottom: 3px !important;
+      font-size: 0.65rem !important;
+      padding: 1px 4px !important;
+      margin-right: 3px !important;
+      margin-bottom: 2px !important;
+      display: inline-block !important;
+    }
+
+    /* Career card sections stay together */
+    .career-card div[style*="background: #faf9f7"] {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
   }
 `
