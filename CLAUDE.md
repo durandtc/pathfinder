@@ -391,6 +391,45 @@ Critical improvements to the report display to deliver a professional, customer-
 **Files Modified**:
 - `pages/assessment.js` — Replaced inline badge with sticky banner component, added slide-down animation, adjusted content padding for parent sections
 
+---
+
+## Recent Updates (May 2026 — continued)
+
+### Print/PDF Report Fixes
+
+Two critical print layout bugs fixed in `pages/report/[id].js`.
+
+**1. Heading not starting at top of page 1**
+- **Root cause**: `div[role="main"]` had `margin: '0 auto'` as an inline style. The print CSS rule `margin: 0` lacked `!important`, so the inline style always won, leaving an unintended top offset.
+- **Fix**: Added `!important` to both `margin` and `padding` on `div[role="main"]` in `PRINT_STYLES`.
+- **Also fixed**: Added `height: 0 !important; overflow: hidden !important` to the `nav` print rule — a `position: sticky` nav can retain phantom height in some browsers even when `display: none`.
+- **Also**: Reduced `@page` top margin from `0.25in` to `0.2in`.
+
+**2. Excessive page breaks on pages 3 & 6**
+- **Root cause**: Career cards had `page-break-inside: avoid` on the entire card wrapper. When a card was taller than the remaining page space, the browser pushed the whole card to the next page, leaving a large blank gap. For cards taller than a full page this is also impossible to honour, creating further unpredictable breaks.
+- **Fix**: Changed career card wrapper to `page-break-inside: auto` (allow breaks within the card). The card title/header `div:first-child` still has `avoid` so the rank, title, and match % never orphan at the bottom of a page.
+- **Also**: Removed `print-no-break` class from the career card JSX wrapper to match.
+
+**Files Modified**:
+- `pages/report/[id].js` — Fixed `margin !important`, nav height, @page margin, career card page-break behaviour
+
+---
+
+### Assessment Session Isolation Fix
+
+**Problem**: Assessment progress (`pmp_answers`, `pmp_marks`, `pmp_currentQ`) was saved to localStorage with no user scope. When a new user logged in on the same browser, the old session's question index was restored — causing the assessment to jump straight to the marks screen (end of assessment).
+
+**Fix** (`pages/assessment.js` — `useEffect`):
+- On load, compare `pmp_session_uid` in localStorage against the current user's ID.
+- If they differ, clear `pmp_answers`, `pmp_marks`, and `pmp_currentQ` before restoring progress.
+- Save current user's ID as `pmp_session_uid` for the next check.
+- Added range validation: only restore `pmp_currentQ` if `0 ≤ idx ≤ questions.length`.
+
+**Files Modified**:
+- `pages/assessment.js` — Added user-scoped session guard to `useEffect`
+
+---
+
 ### Go-to-Market Strategy: Psychometrist Partnerships
 
 **Decision**: Begin outreach to professional psychometrists for partnership and market validation.

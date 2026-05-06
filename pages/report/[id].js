@@ -12,17 +12,17 @@ const PRINT_STYLES = `
     * { orphans: 3; widows: 3; }
     body { margin: 0; padding: 0; background: #fff; }
     html { margin: 0; padding: 0; }
-    nav, .action-buttons { display: none !important; }
+    nav, .action-buttons { display: none !important; height: 0 !important; overflow: hidden !important; }
     .report-header { page-break-after: avoid; margin: 0 0 0.8rem 0 !important; padding: 0.8rem 0.6rem !important; }
     .report-header h1 { color: #000 !important; margin-bottom: 0.08rem !important; font-size: 1.1rem !important; }
     .report-header p { color: #333 !important; margin-bottom: 0.1rem !important; font-size: 0.65rem !important; }
     .report-header hr { border-top-color: #ccc !important; margin: 0.2rem 0 !important; }
     .report-header div:first-of-type { margin-bottom: 0.4rem !important; }
-    .career-card { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 0.4rem !important; }
-    .career-card > div:first-child { padding: 0.6rem 0.7rem !important; }
+    .career-card { page-break-inside: auto !important; break-inside: auto !important; margin-bottom: 0.4rem !important; }
+    .career-card > div:first-child { padding: 0.6rem 0.7rem !important; page-break-inside: avoid !important; break-inside: avoid !important; }
     .career-card > div:last-child { padding: 0.6rem 0.7rem !important; }
-    div[role="main"] { margin: 0; padding: 0 !important; max-width: 100%; }
-    @page { margin: 0.25in 0.3in; size: A4; }
+    div[role="main"] { margin: 0 !important; padding: 0 !important; max-width: 100%; }
+    @page { margin: 0.2in 0.3in; size: A4; }
 
     /* Tighten report content spacing */
     div[style*="background: #f0f7ff"], div[style*="background: #eeedfe"], div[style*="background: #f0fff4"] {
@@ -169,7 +169,7 @@ export default function ReportPage() {
 
         {/* Career cards */}
         {careers.map((c, i) => (
-          <div key={i} style={{ background: 'var(--white)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '1.5rem', boxShadow: 'var(--shadow)', pageBreakInside: 'avoid' }} className="career-card print-no-break">
+          <div key={i} style={{ background: 'var(--white)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '1.5rem', boxShadow: 'var(--shadow)' }} className="career-card">
             <div style={{ background: 'var(--cream)', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
               <div style={{ width: 34, height: 34, background: 'var(--navy)', color: 'var(--gold)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Georgia,serif', fontWeight: 700, flexShrink: 0 }}>{c.rank}</div>
               <div style={{ flex: 1 }}>

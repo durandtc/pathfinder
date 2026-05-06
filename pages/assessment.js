@@ -28,13 +28,25 @@ export default function Assessment() {
     setFilteredQuestions(questions)
     setFilteredSections(sections)
 
-    const savedAnswers = localStorage.getItem('pmp_answers')
-    const savedMarks   = localStorage.getItem('pmp_marks')
+    // Guard: clear saved progress if it belongs to a different user session
+    const savedUserId = localStorage.getItem('pmp_session_uid')
+    if (savedUserId && savedUserId !== String(parsed.id)) {
+      localStorage.removeItem('pmp_answers')
+      localStorage.removeItem('pmp_marks')
+      localStorage.removeItem('pmp_currentQ')
+    }
+    localStorage.setItem('pmp_session_uid', String(parsed.id))
+
+    const savedAnswers  = localStorage.getItem('pmp_answers')
+    const savedMarks    = localStorage.getItem('pmp_marks')
     const savedQuestion = localStorage.getItem('pmp_currentQ')
 
     if (savedAnswers) setAnswers(JSON.parse(savedAnswers))
     if (savedMarks)   setMarks(JSON.parse(savedMarks))
-    if (savedQuestion) setCurrentQ(parseInt(savedQuestion, 10))
+    if (savedQuestion) {
+      const idx = parseInt(savedQuestion, 10)
+      if (idx >= 0 && idx <= questions.length) setCurrentQ(idx)
+    }
   }, [])
 
   function selectAnswer(val) {
