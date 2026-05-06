@@ -371,3 +371,47 @@ Critical improvements to the report display to deliver a professional, customer-
 #### Files Modified
 - `CLAUDE.md` — Added Firebase OAuth troubleshooting and configuration details to "Google OAuth & Firebase Configuration" section and "Environment Variables" section
 
+### Parent Handoff Alert Banner
+
+**Problem**: During the assessment, the parent notification signaling the handoff (parent observations & marks sections) was a small inline badge that was easily missed by students focused on answering questions.
+
+**Solution**: Replaced small badge with a prominent **sticky alert banner** that appears at the top of the page and stays visible while the parent fills in marks/observations.
+
+**Banner Features**:
+- **Fixed positioning** — Stays at top of viewport as parent scrolls
+- **Gold gradient background** — Eye-catching but on-brand styling
+- **Clear messaging** — "👨‍👩‍👧‍👦 Parent / Guardian — It's Your Turn Now" with context about why their input matters
+- **Slide-down animation** — Draws attention when section first loads
+- **Dynamic padding** — Main content has extra top padding when banner is visible (prevents content from hiding behind banner)
+
+**When Banner Appears**:
+- Parent Observations section (questions answered by parent about student)
+- Marks section (parent enters student's academic marks)
+
+**Files Modified**:
+- `pages/assessment.js` — Replaced inline badge with sticky banner component, added slide-down animation, adjusted content padding for parent sections
+
+### Go-to-Market Strategy: Psychometrist Partnerships
+
+**Decision**: Begin outreach to professional psychometrists for partnership and market validation.
+
+**Rationale**:
+- Psychometrist partnerships provide credibility and professional endorsement — schools trust practitioners, not just tech platforms
+- Natural distribution channel — psychometrists have existing relationships with schools and guidance counselors
+- Professional review validates assessment quality and AI output alignment with career development best practices
+- Market positioning: position PickMyPath as complementary tool (reduces admin burden, improves assessment quality) rather than competitive threat
+
+**Pilot Approach**:
+1. Identify and contact 3–5 psychometrists (research their background, school affiliations, published work)
+2. Personalized outreach (specific references, small ask — 15 min feedback, not partnership pitch)
+3. Secure one school pilot test with interested psychometrist
+4. Gather feedback on assessment framework, AI output quality, school integration
+5. Iterate based on professional input before broader rollout
+
+**Outreach Email Strategy**:
+- Lead with their expertise, not your product
+- Specific and personal (reference their work, school, insights)
+- Short and respectful of time (no headers, no template feel)
+- Tiny ask (feedback, not partnership) — reduces friction
+- Demo-first option (let them poke around before committing to a call)
+

@@ -13,44 +13,44 @@ const PRINT_STYLES = `
     body { margin: 0; padding: 0; background: #fff; }
     html { margin: 0; padding: 0; }
     nav, .action-buttons { display: none !important; }
-    .print-no-break { page-break-inside: avoid !important; break-inside: avoid !important; }
-    .report-header { page-break-after: avoid; margin-bottom: 0.4rem !important; padding: 1rem !important; }
-    .report-header h1 { color: #000 !important; margin-bottom: 0.15rem !important; font-size: 1.2rem !important; }
-    .report-header p { color: #333 !important; margin-bottom: 0.2rem !important; font-size: 0.7rem !important; }
-    .report-header hr { border-top-color: #ccc !important; margin: 0.3rem 0 !important; }
-    .career-card { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 0.5rem !important; }
-    .career-card > div:first-child { padding: 0.8rem 0.9rem !important; }
-    .career-card > div:last-child { padding: 0.8rem 0.9rem !important; }
-    div[role="main"] { margin: 0; padding: 0.4rem !important; max-width: 100%; }
-    @page { margin: 0.3in 0.4in; size: A4; }
+    .report-header { page-break-after: avoid; margin: 0 0 0.8rem 0 !important; padding: 0.8rem 0.6rem !important; }
+    .report-header h1 { color: #000 !important; margin-bottom: 0.08rem !important; font-size: 1.1rem !important; }
+    .report-header p { color: #333 !important; margin-bottom: 0.1rem !important; font-size: 0.65rem !important; }
+    .report-header hr { border-top-color: #ccc !important; margin: 0.2rem 0 !important; }
+    .report-header div:first-of-type { margin-bottom: 0.4rem !important; }
+    .career-card { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 0.4rem !important; }
+    .career-card > div:first-child { padding: 0.6rem 0.7rem !important; }
+    .career-card > div:last-child { padding: 0.6rem 0.7rem !important; }
+    div[role="main"] { margin: 0; padding: 0 !important; max-width: 100%; }
+    @page { margin: 0.25in 0.3in; size: A4; }
 
     /* Tighten report content spacing */
     div[style*="background: #f0f7ff"], div[style*="background: #eeedfe"], div[style*="background: #f0fff4"] {
-      margin-bottom: 0.3rem !important;
-      padding: 0.7rem 0.9rem !important;
+      margin-bottom: 0.25rem !important;
+      padding: 0.6rem 0.7rem !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
     }
 
     /* Compress markdown content */
     .report-md { margin: 0 !important; }
-    .report-md p { margin: 0 0 0.15rem 0 !important; font-size: 0.8rem !important; line-height: 1.35 !important; }
-    .report-md ul { margin: 0.1rem 0 0.1rem 0.9rem !important; padding: 0 !important; }
-    .report-md ul li { margin-bottom: 0.08rem !important; font-size: 0.8rem !important; line-height: 1.3 !important; }
-    .report-md table { margin: 0.25rem 0 !important; font-size: 0.7rem !important; width: 100%; }
-    .report-md th { padding: 3px 5px !important; font-size: 0.7rem !important; }
-    .report-md td { padding: 2px 4px !important; font-size: 0.7rem !important; }
+    .report-md p { margin: 0 0 0.12rem 0 !important; font-size: 0.75rem !important; line-height: 1.3 !important; }
+    .report-md ul { margin: 0.08rem 0 0.08rem 0.7rem !important; padding: 0 !important; }
+    .report-md ul li { margin-bottom: 0.06rem !important; font-size: 0.75rem !important; line-height: 1.25 !important; }
+    .report-md table { margin: 0.15rem 0 !important; font-size: 0.65rem !important; width: 100%; }
+    .report-md th { padding: 2px 3px !important; font-size: 0.65rem !important; }
+    .report-md td { padding: 1px 3px !important; font-size: 0.65rem !important; }
 
     /* Section labels */
-    h4[style*="textTransform"] { margin-bottom: 0.15rem !important; margin-top: 0.35rem !important; font-size: 0.55rem !important; }
-    h3[style*="fontFamily"] { margin-bottom: 0.2rem !important; font-size: 0.85rem !important; }
+    h4[style*="textTransform"] { margin-bottom: 0.1rem !important; margin-top: 0.2rem !important; font-size: 0.5rem !important; }
+    h3[style*="fontFamily"] { margin-bottom: 0.15rem !important; font-size: 0.75rem !important; }
 
     /* Subject tags */
     span[style*="background: #e8f0f8"], span[style*="background: #e8f5e8"] {
-      font-size: 0.65rem !important;
-      padding: 1px 4px !important;
-      margin-right: 3px !important;
-      margin-bottom: 2px !important;
+      font-size: 0.6rem !important;
+      padding: 0.5px 3px !important;
+      margin-right: 2px !important;
+      margin-bottom: 1px !important;
       display: inline-block !important;
     }
 

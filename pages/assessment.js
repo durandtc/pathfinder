@@ -140,7 +140,32 @@ export default function Assessment() {
     <>
       <Head><title>Assessment — PickMyPath</title></Head>
       <Nav />
-      <div style={{ maxWidth: 700, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+      {/* Parent Alert Banner - Sticky */}
+      {isParentSection && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(90deg, #c9973a 0%, #e8b856 50%, #c9973a 100%)',
+          padding: '1rem 2rem',
+          boxShadow: '0 4px 12px rgba(201, 151, 58, 0.3)',
+          zIndex: 50,
+          textAlign: 'center',
+          animation: 'slideDown 0.4s ease'
+        }}>
+          <style>{`@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }`}</style>
+          <div style={{ maxWidth: 700, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>👨‍👩‍👧‍👦</span>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 600, color: '#0f1f3d', fontSize: '1rem', lineHeight: 1.2 }}>Parent / Guardian — It's Your Turn Now</div>
+              <div style={{ fontWeight: 300, color: 'rgba(15,31,61,0.8)', fontSize: '0.875rem', marginTop: '2px' }}>Your observations and their school marks are crucial for an accurate career match.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ maxWidth: 700, margin: '0 auto', padding: isParentSection ? '7.5rem 1.5rem 2.5rem 1.5rem' : '2.5rem 1.5rem' }}>
 
         {/* Progress bar */}
         <div style={{ marginBottom: '2rem' }}>
@@ -155,11 +180,6 @@ export default function Assessment() {
 
         {/* Section header */}
         <div style={{ marginBottom: '1.5rem' }}>
-          {isParentSection && (
-            <div style={{ display: 'inline-block', background: '#eeedfe', color: '#3c3489', border: '1px solid #afa9ec', borderRadius: 20, padding: '3px 12px', fontSize: '0.75rem', fontWeight: 500, marginBottom: 8 }}>
-              👨‍👩‍👧 Parent / Guardian — please take over
-            </div>
-          )}
           <h2 style={{ fontFamily: 'Georgia,serif', fontSize: '1.35rem', color: 'var(--navy)', marginBottom: 4 }}>{currentSection.title}</h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', fontWeight: 300, lineHeight: 1.6 }}>{currentSection.subtitle}</p>
         </div>
