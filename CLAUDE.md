@@ -10,13 +10,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## Development Commands
+## Development Workflow
 
+**Important**: This project uses **Vercel-only deployment**. There is no local `.env.local` development.
+
+- All code changes are pushed to GitHub
+- Vercel automatically builds and deploys on push
+- All environment variables are configured in **Vercel project settings** (not local .env files)
+- Testing always happens on the **live Vercel deployment** (production parity from the start)
+
+**Local setup** (for code editing only):
 ```bash
-npm install           # Install dependencies
-npm run dev          # Run dev server (http://localhost:3000)
-npm run build        # Build for production
-npm start            # Start production server
+npm install           # Install dependencies (no npm run dev needed)
+git push              # Push to GitHub → Vercel auto-deploys
 ```
 
 ---
@@ -47,13 +53,13 @@ npm start            # Start production server
   2. Find the OAuth 2.0 Client ID (type: Web application)
   3. Add **both** `https://www.pickmypath.co.za/api/auth/google/callback` and `https://pickmypath.co.za/api/auth/google/callback` to **Authorized redirect URIs**
   4. Also whitelist both domains in **Firebase Console** → **Authentication** → **Settings** → **Authorized domains**
-  5. Verify `.env.local` has `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` pointing to custom domain (not Firebase default)
-- **Environment variables required**:
+  5. In **Vercel project settings**, set `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` to your custom domain (not Firebase default)
+- **Environment variables required** (set in Vercel):
   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase project ID
   - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase API key from web app config
   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` — custom auth domain for redirects (e.g., `pickmypath.co.za`)
   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — OAuth client ID from Google Cloud Console
-- **Testing**: After updating, test login from actual domain (not localhost) to verify redirect works
+- **Testing**: After updating, test login on the live Vercel deployment to verify redirect works
 
 ### Database & Data Layer
 
@@ -187,18 +193,20 @@ export default async function handler(req, res) {
 
 ## Environment Variables
 
-See `.env.local.example` for the full list. Key secrets required to run locally:
+**All environment variables are configured in Vercel project settings** (not local .env files). Configure these in **Vercel Dashboard → Settings → Environment Variables**:
+
 - **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- **Anthropic AI**: `ANTHROPIC_API_KEY` and `AI_MODEL`
-- **JWT Auth**: `JWT_SECRET` (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
-- **Admin Credentials**: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (free choice for local testing)
+- **Anthropic AI**: `ANTHROPIC_API_KEY` and `AI_MODEL` (claude-sonnet-4-6 for production)
+- **JWT Auth**: `JWT_SECRET` (must be a 32-byte hex string)
+- **App URL**: `NEXT_PUBLIC_APP_URL` — The live domain (e.g., `https://pickmypath.co.za`) — used for email verification links and password reset URLs
+- **Admin Credentials**: `ADMIN_EMAIL`, `ADMIN_PASSWORD`
 - **Firebase & Google OAuth**:
   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase project ID (e.g., `pathfinder-55a19`)
   - `NEXT_PUBLIC_FIREBASE_API_KEY` — Firebase web app API key
-  - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` — custom domain for auth redirects (e.g., `pickmypath.co.za`)
+  - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` — custom auth domain for redirects (e.g., `pickmypath.co.za`)
   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — OAuth 2.0 Client ID from Google Cloud Console
-- **Email**: `SMTP_HOST=mail.pickmypath.co.za`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER` (email address), `SMTP_PASS` (password)
-- **Payments**: `NEXT_PUBLIC_PAYFAST_SANDBOX=true` (default; set false to enable live payment processing)
+- **Email**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` (email address), `SMTP_PASS` (password)
+- **Payments**: `NEXT_PUBLIC_PAYFAST_SANDBOX` (set to false for live transactions)
 
 ---
 
@@ -227,20 +235,19 @@ See `.env.local.example` for the full list. Key secrets required to run locally:
 3. Use `student_name` from database (not `full_name`) for report headers
 4. Wrap content that should not break across pages with `className="print-no-break"`
 
-### Deploying to production
-1. Run database migration: Add `student_name` column via Supabase SQL Editor (already in `supabase-schema.sql`)
-2. Set all env vars in Vercel project settings (copy from `.env.local`)
-3. Ensure `NEXT_PUBLIC_PAYFAST_SANDBOX=false` if live payments enabled
-4. Use `claude-sonnet-4-6` for `AI_MODEL` in production (Haiku is for testing)
-5. Deploy via Vercel UI (automatic on GitHub push)
+### Making changes
+1. Edit code locally and push to GitHub
+2. Vercel automatically deploys on push
+3. Verify changes on the live Vercel deployment
+4. To add/update environment variables, go to Vercel project settings → Environment Variables
 
 ---
 
 ## Testing Notes
 
-- **No automated test suite** — test manually via `npm run dev` and browser at http://localhost:3000
-- **PayFast sandbox** allows full payment flow testing without real transactions
-- **Admin panel** accessible with env var credentials on `/admin`
+- **No automated test suite** — test manually on the live Vercel deployment
+- **PayFast sandbox** allows full payment flow testing without real transactions (enable with `NEXT_PUBLIC_PAYFAST_SANDBOX=true` in Vercel env vars)
+- **Admin panel** (`/admin`) accessible with `ADMIN_EMAIL` and `ADMIN_PASSWORD` credentials from Vercel env vars
 
 ---
 
