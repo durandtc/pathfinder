@@ -45,13 +45,21 @@ const PRINT_STYLES = `
     h4[style*="textTransform"] { margin-bottom: 0.1rem !important; margin-top: 0.2rem !important; font-size: 0.5rem !important; }
     h3[style*="fontFamily"] { margin-bottom: 0.15rem !important; font-size: 0.75rem !important; }
 
-    /* Subject tags */
-    span[style*="background: #e8f0f8"], span[style*="background: #e8f5e8"] {
+    /* Subject tags and salary pills */
+    span[style*="background: #e8f0f8"], span[style*="background: #e8f5e8"], div[style*="background: #e8f0f8"] {
       font-size: 0.6rem !important;
       padding: 0.5px 3px !important;
       margin-right: 2px !important;
       margin-bottom: 1px !important;
       display: inline-block !important;
+    }
+
+    /* Day in the life and exploration boxes */
+    div[style*="background: #faf9f7"], div[style*="background: #f0fff4"] {
+      margin-bottom: 0.3rem !important;
+      padding: 0.5rem 0.6rem !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
 
     /* Career card sections stay together */
@@ -136,6 +144,13 @@ export default function ReportPage() {
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', marginBottom: '1rem' }}>Generated {date} · PickMyPath</p>
 
+          {/* Report headline — NEW */}
+          {rd?.report_headline && (
+            <p style={{ color: 'rgba(201,151,58,0.95)', fontSize: '0.95rem', lineHeight: 1.6, fontWeight: 400, marginBottom: '0.75rem', fontStyle: 'italic' }}>
+              "{rd.report_headline}"
+            </p>
+          )}
+
           {/* Stage context */}
           {rd?.stage_context && (
             <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.875rem', lineHeight: 1.6, fontWeight: 400, marginBottom: '0.75rem', fontStyle: 'italic' }}>
@@ -143,7 +158,14 @@ export default function ReportPage() {
             </p>
           )}
 
-          {(rd?.stage_context || riasec?.dominant_types?.length > 0) && riasec?.summary && (
+          {/* Career choice rationale — NEW */}
+          {rd?.career_choice_rationale && (
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', lineHeight: 1.5, fontWeight: 300, marginBottom: '0.75rem' }}>
+              {rd.career_choice_rationale}
+            </p>
+          )}
+
+          {(rd?.stage_context || rd?.career_choice_rationale || riasec?.dominant_types?.length > 0) && riasec?.summary && (
             <hr style={{ border: 'none', borderTop: '1px solid rgba(201,151,58,0.3)', margin: '0.75rem 0' }} />
           )}
 
@@ -194,6 +216,58 @@ export default function ReportPage() {
                 </>
               )}
 
+              {/* Day in the Life — NEW */}
+              {c.day_in_the_life && (
+                <>
+                  <SectionLabel>📅 A day in the life</SectionLabel>
+                  <div style={{ background: '#faf9f7', borderLeft: '3px solid #c9973a', padding: '12px 14px', borderRadius: '0 8px 8px 0', marginBottom: '1rem' }}>
+                    <MarkdownContent>{c.day_in_the_life}</MarkdownContent>
+                  </div>
+                </>
+              )}
+
+              {/* Salary & Career Progression — NEW */}
+              {c.salary_range && (
+                <>
+                  <SectionLabel>💰 Salary & career progression</SectionLabel>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: '1rem' }}>
+                    {c.salary_range.entry && (
+                      <div style={{ background: '#e8f0f8', color: '#1a3260', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', fontWeight: 500 }}>
+                        <div style={{ fontSize: '0.7rem', opacity: 0.75 }}>ENTRY LEVEL</div>
+                        <div>{c.salary_range.entry}</div>
+                      </div>
+                    )}
+                    {c.salary_range.mid && (
+                      <div style={{ background: '#e8f0f8', color: '#1a3260', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', fontWeight: 500 }}>
+                        <div style={{ fontSize: '0.7rem', opacity: 0.75 }}>MID-CAREER</div>
+                        <div>{c.salary_range.mid}</div>
+                      </div>
+                    )}
+                    {c.salary_range.senior && (
+                      <div style={{ background: '#e8f0f8', color: '#1a3260', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', fontWeight: 500 }}>
+                        <div style={{ fontSize: '0.7rem', opacity: 0.75 }}>SENIOR LEVEL</div>
+                        <div>{c.salary_range.senior}</div>
+                      </div>
+                    )}
+                  </div>
+                  {c.career_progression && (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-mid)', lineHeight: 1.6, margin: '0 0 1rem 0', fontStyle: 'italic' }}>
+                      {c.career_progression}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* Exploration Tip — NEW */}
+              {c.exploration_tip && (
+                <>
+                  <SectionLabel>🔍 Try this this week</SectionLabel>
+                  <div style={{ background: '#f0fff4', borderLeft: '3px solid #2d7a4f', padding: '12px 14px', borderRadius: '0 8px 8px 0', marginBottom: '1rem' }}>
+                    <MarkdownContent>{c.exploration_tip}</MarkdownContent>
+                  </div>
+                </>
+              )}
+
               <SectionLabel>{schoolLearner ? 'Required subjects' : 'Required qualifications & skills'}</SectionLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                 {(c.subjects_required || []).map(s => <span key={s} style={{ background: '#e8f0f8', color: '#1a3260', borderRadius: 6, padding: '3px 9px', fontSize: '0.8rem', fontWeight: 500 }}>{s}</span>)}
@@ -230,22 +304,39 @@ export default function ReportPage() {
         )}
 
         {/* Parent / support person note */}
-        {rd?.parent_note && (
+        {(rd?.parent_action_plan || rd?.parent_note) && (
           <div style={{ background: '#eeedfe', borderRadius: 12, padding: '1.5rem', marginBottom: '1.25rem', border: '1px solid #afa9ec', pageBreakInside: 'avoid' }} className="print-no-break">
-            <h3 style={{ fontFamily: 'Georgia,serif', color: '#3c3489', marginBottom: '0.75rem', fontSize: '1.1rem' }}>
-              👨‍👩‍👧 A note for your support person
+            <h3 style={{ fontFamily: 'Georgia,serif', color: '#3c3489', marginBottom: '1rem', fontSize: '1.1rem' }}>
+              👨‍👩‍👧 For your parent / support person
             </h3>
-            <div style={{ color: '#534ab7' }}>
-              <MarkdownContent>{rd.parent_note}</MarkdownContent>
-            </div>
+            {rd?.parent_action_plan && (
+              <div style={{ marginBottom: rd?.parent_note ? '1rem' : 0 }}>
+                <h4 style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3c3489', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Action items for the next 30 days</h4>
+                <div style={{ color: '#534ab7' }}>
+                  <MarkdownContent>{rd.parent_action_plan}</MarkdownContent>
+                </div>
+              </div>
+            )}
+            {rd?.parent_action_plan && rd?.parent_note && (
+              <hr style={{ border: 'none', borderTop: '1px solid rgba(58, 41, 137, 0.2)', margin: '1rem 0' }} />
+            )}
+            {rd?.parent_note && (
+              <div style={{ color: '#534ab7' }}>
+                <MarkdownContent>{rd.parent_note}</MarkdownContent>
+              </div>
+            )}
           </div>
         )}
 
         {/* Motivational note */}
         {rd?.motivational_note && (
-          <div style={{ background: '#f0fff4', borderRadius: 12, padding: '1.5rem', marginBottom: '2rem', border: '1px solid #d5f0dc', pageBreakInside: 'avoid' }} className="print-no-break">
-            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', marginBottom: '0.75rem', fontSize: '1.1rem' }}>💡 A note for you</h3>
-            <MarkdownContent>{rd.motivational_note}</MarkdownContent>
+          <div style={{ background: '#f0fff4', borderRadius: 12, padding: '2rem', marginBottom: '2rem', border: '1px solid #d5f0dc', pageBreakInside: 'avoid', borderLeft: '4px solid var(--gold)' }} className="print-no-break">
+            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', marginBottom: '1rem', fontSize: '1.15rem' }}>
+              ✨ What we see in you{studentName ? `, ${studentName.split(' ')[0]}` : ''}
+            </h3>
+            <div style={{ fontSize: '0.95rem', lineHeight: 1.8 }}>
+              <MarkdownContent>{rd.motivational_note}</MarkdownContent>
+            </div>
           </div>
         )}
 

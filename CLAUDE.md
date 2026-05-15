@@ -461,3 +461,78 @@ Two critical print layout bugs fixed in `pages/report/[id].js`.
 - Tiny ask (feedback, not partnership) — reduces friction
 - Demo-first option (let them poke around before committing to a call)
 
+---
+
+### Report Gold Standard Upgrade — May 2026
+
+**Problem**: The report was professional and well-structured, but didn't deliver the "wow factor" that makes parents tell friends. Critical gaps:
+- No day-in-the-life descriptions (careers felt abstract)
+- No salary/earnings data (parents paying R399 wanted ROI proof)
+- No career progression timeline (no answer to "where does this lead?")
+- Generic parent guidance (no specific support actions)
+- Vague action items
+
+**Solution**: Enhanced the AI prompt and report display with 7 new fields that answer the 4 parent questions: *What will my child DO? What will they EARN? Where does this LEAD? What do WE do NOW?*
+
+#### New AI Report Fields (JSON structure)
+
+**Per-career fields** (added to each of the 3 ranked careers in `top_careers.careers[n]`):
+- **`day_in_the_life`** — 2-3 sentences painting a vivid Tuesday: specific activities, tools, environments (e.g., "morning collecting water samples from a township borehole, afternoon running statistical analysis, evening writing reports")
+- **`salary_range`** — Object: `{ entry: "R180k–280k/yr", mid: "R380k–550k/yr", senior: "R650k–950k+/yr" }` — displayed as three salary pills in the report
+- **`career_progression`** — Timeline string: "Year 1–3: [junior] → Year 4–8: [mid] → Year 9–15: [senior] → 15+: [director]"
+- **`exploration_tip`** — One concrete action for THIS WEEK: specific YouTube channel, organisation to contact, person type to shadow, or free course
+
+**Top-level report fields**:
+- **`report_headline`** — Punchy one-liner: "A systems thinker who builds things that actually help people" — captures student's unique RIASEC profile
+- **`career_choice_rationale`** — 2 sentences explaining why these 3 careers ranked above all others, referencing patterns in the assessment data
+- **`parent_action_plan`** — Exactly 3 specific, doable bullets for parents to do in next 30 days (e.g., "Arrange a 2-hour shadow day at [org]", "Discuss [topic] over dinner", "Attend [university open day]")
+
+**Improved existing fields**:
+- **`motivational_note`** — Now explicitly must acknowledge ONE specific struggle found in their data (e.g., math confidence gap), reframe it as a strength-in-progress, and end with a sentence that makes them feel genuinely seen
+- **`subject_or_next_steps_advice`** — Now ends with 4 numbered ACTION ITEMS (specific, doable steps)
+
+#### Changes to `lib/generateReport.js`
+- Updated Claude prompt JSON schema to include all 7 new fields with detailed instructions
+- Changed default AI model: `claude-haiku-4-5-20251001` → `claude-sonnet-4-6` (better quality for paid product)
+- Increased `max_tokens` from 8000 → 12000 to accommodate richer outputs
+- Added examples and specific guidance for each new field to ensure Claude generates vivid, actionable content
+
+#### Changes to `pages/report/[id].js`
+- **Header section**: Added `report_headline` (gold italic quote) and `career_choice_rationale` (context) below student name
+- **Each career card — new sections added in order**:
+  1. **Day in the Life** (📅) — Cream-colored callout box with vivid description
+  2. **Salary & Career Progression** (💰) — Three salary pills (Entry/Mid/Senior) in a flex row, followed by italic timeline text
+  3. **Exploration Tip** (🔍) — Green-tinted callout box with concrete weekly action
+- **Parent section — restructured**:
+  - Now renders `parent_action_plan` as bullet list FIRST (with subheader "Action items for the next 30 days")
+  - Visual divider line separates action items from prose
+  - `parent_note` rendered below as warm supportive prose
+  - Title changed to "For your parent / support person"
+- **Motivational note section — enhanced**:
+  - Larger padding (2rem) and gold left-border accent for prominence
+  - Personalized title: "✨ What we see in you, [first name]" (extracts student's first name if available)
+  - Larger font (0.95rem) and generous line-height (1.8) for readability
+- **Graceful fallback**: All new fields have `&&` conditional guards for backward compatibility with old reports
+
+#### Changes to `styles/globals.css`
+- Added `.salary-pill` utility class for the three salary level badges
+- Added `.day-in-the-life-box` and `.exploration-tip-box` classes for callout styling
+- Enhanced print media queries for new sections (tight 0.75rem font sizes, page-break-inside: avoid to prevent content splitting)
+
+#### Files Modified
+- `lib/generateReport.js` — Expanded prompt schema, model upgrade, token increase
+- `pages/report/[id].js` — New report sections (day-in-the-life, salary, exploration, parent action plan), enhanced motivational note
+- `styles/globals.css` — Utility classes and print overrides for new sections
+
+#### Impact
+- **For parents**: Report now answers the 4 critical questions (what, earn, timeline, action) — strong driver for word-of-mouth ("This report told me exactly what to do")
+- **For students**: Day-in-the-life makes careers tangible; personalized note makes them feel genuinely understood; exploration tip gives immediate next step
+- **For business**: Report justifies R399 price point; positioned as premium, personalized career guidance tool
+- **Technical**: No database schema changes needed — all new fields stored in existing `top_careers JSONB` column; fully backward-compatible with old reports
+
+#### No Deployment Changes Required
+- All changes are client-side (AI prompt enhancement, report rendering, CSS)
+- Vercel `AI_MODEL` environment variable already set in project settings
+- On next report generation, AI will include all new fields
+- Old reports render gracefully (missing fields don't break the UI)
+
