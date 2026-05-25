@@ -86,8 +86,7 @@ export default function Home() {
         </div>
         <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'var(--cream-mid)', borderRadius: 12, borderLeft: '4px solid var(--gold)' }}>
           <p style={{ color: 'var(--navy)', fontSize: '0.9rem', fontWeight: 300, margin: 0 }}>
-            <strong>Validated frameworks.</strong> PickMyPath is built on the same assessment models used by professional career counselors worldwide.
-            Coming soon: Expert review by a registered psychometrist.
+            <strong>Research-backed frameworks.</strong> PickMyPath uses established career assessment models (Holland RIASEC, career values, aptitude frameworks) combined with actual school marks. This is a <em>guidance tool</em>, not a substitute for professional career counseling. We recommend discussing results with your school counselor or a qualified career advisor.
           </p>
         </div>
       </section>
@@ -152,10 +151,14 @@ export default function Home() {
         </div>
       </section>
 
-      <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '1.5rem 2rem', textAlign: 'center' }}>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
-          © {new Date().getFullYear()} PickMyPath · All rights reserved ·{' '}
-          <Link href="/admin" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>Admin</Link>
+      <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '2rem', textAlign: 'center' }}>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+          © {new Date().getFullYear()} PickMyPath · All rights reserved
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', margin: 0 }}>
+          <Link href="/terms" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginRight: '1rem' }}>Terms of Service</Link>
+          <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginRight: '1rem' }}>Privacy Policy</Link>
+          <Link href="/admin" style={{ color: 'rgba(255,255,255,0.3)' }}>Admin</Link>
         </p>
       </footer>
     </>

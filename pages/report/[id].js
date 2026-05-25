@@ -340,6 +340,19 @@ export default function ReportPage() {
           </div>
         )}
 
+        {/* Disclaimer */}
+        <div style={{ background: '#f5f5f5', borderRadius: 12, padding: '1rem 1.5rem', marginBottom: '2rem', border: '1px solid #e0e0e0', fontSize: '0.8rem', color: 'var(--text-mid)', lineHeight: 1.6 }}>
+          <p style={{ margin: '0 0 0.5rem 0' }}>
+            <strong>Important:</strong> This report is generated using AI and is intended as a <strong>career guidance tool for exploration only</strong>. It should not replace consultation with a professional school counselor, qualified career advisor, or psychometrist for major educational and career decisions.
+          </p>
+          <p style={{ margin: '0 0 0.5rem 0' }}>
+            The recommendations are based on your assessment responses and school marks, but reflect general career pathways. Your actual suitability for any career depends on many factors — aptitude, interests, personal circumstances, market conditions, and ongoing development. Always verify admission requirements directly with universities or institutions before making final decisions.
+          </p>
+          <p style={{ margin: 0 }}>
+            For personalized career counseling, speak with your school guidance counselor or contact a registered career advisor or psychometrist in your province.
+          </p>
+        </div>
+
         {/* Actions */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', marginTop: '2rem' }} className="action-buttons">
           <button onClick={() => window.print()} style={{ flex: 1, minWidth: 140, padding: '13px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500 }}>

@@ -536,3 +536,108 @@ Two critical print layout bugs fixed in `pages/report/[id].js`.
 - On next report generation, AI will include all new fields
 - Old reports render gracefully (missing fields don't break the UI)
 
+---
+
+### Legal & Compliance: Comprehensive Disclaimers — May 2026 (continued)
+
+**Problem**: PickMyPath needed clear legal disclaimers to avoid liability risks when approaching schools. The messaging needed to distinguish between "career guidance tool" (what we are) and "professional psychometric assessment" (what we're not), reducing legal exposure while building school trust.
+
+**Solution**: Added comprehensive disclaimers across the platform + two new legal pages (Terms of Service, Privacy Policy). All messaging emphasizes PickMyPath as a *guidance tool for exploration*, not a substitute for professional career counseling.
+
+#### Key Messaging (Consistent Across All Pages)
+
+1. **"Career guidance tool for exploration"** — Not a professional assessment
+2. **"AI-generated content"** — Can be inaccurate, outdated, or generic
+3. **"Discuss with your school counselor"** — Directs users to qualified professionals
+4. **"Not a substitute for professional counseling"** — Removes ambiguity
+5. **"Verify information independently"** — Especially salary data and university requirements
+6. **"Limited liability"** — PickMyPath not responsible for user decisions based on reports
+
+#### Changes to Existing Pages
+
+**Home Page (`pages/index.js`)**
+- Softened expertise claim: Removed "Coming soon: Expert review by a registered psychometrist"
+- Replaced with: "Research-backed frameworks...we recommend discussing results with your school counselor or a qualified career advisor"
+- Updated footer: Added links to `/terms` and `/privacy`
+
+**Assessment Page (`pages/assessment.js`)**
+- Added disclaimer banner on first question: "This is a career guidance assessment, not a professional psychometric evaluation"
+- Red alert box (#fff0f0) appears once per session
+- Reinforces: "We recommend discussing results with your school counselor"
+
+**Report Page (`pages/report/[id].js`)**
+- Added footer disclaimer section before action buttons
+- Gray box (#f5f5f5) with three key points:
+  1. "AI-powered career guidance tool for exploration only"
+  2. "Should not replace consultation with professional counselor/advisor"
+  3. "Verify career info and admission requirements directly with institutions"
+
+#### New Pages Created
+
+**Terms of Service (`pages/terms.js`)**
+- 9 sections covering:
+  1. **Guidance Tool, Not Professional Assessment** — Explicit list of what PickMyPath is NOT
+  2. **AI-Generated Content** — Transparent about AI limitations and inaccuracies
+  3. **User Responsibility** — Users must verify info before making decisions
+  4. **Limitation of Liability** — PickMyPath not liable for user decisions or outcomes
+  5. **Data Privacy** — Links to privacy policy
+  6. **Payment & Refunds** — Clear refund policy (non-refundable unless technical failure)
+  7. **User Conduct** — What users cannot do (false info, hacking, harassment, etc.)
+  8. **Changes to Terms** — How updates will be communicated
+  9. **Contact & Support** — Email and hours for support requests
+- Includes safety box: "By proceeding, you acknowledge you've read these terms"
+
+**Privacy Policy (`pages/privacy.js`)**
+- 13 sections covering:
+  1. **Overview** — What PickMyPath collects and why
+  2. **What Information We Collect** — Account info, assessment data, payment info
+  3. **How We Use Your Information** — Service delivery, platform improvement, legal compliance
+  4. **Who We Share Data With** — Transparent list (Supabase, Anthropic Claude, PayFast, Vercel, email provider)
+  5. **AI and Assessment Data Processing** — Explicit disclosure that Claude API receives responses for report generation
+  6. **Data Retention** — How long data is kept, deletion policy
+  7. **Security** — HTTPS, password hashing, JWT tokens, no credit card storage
+  8. **Your Rights** — Access, rectify, delete, portability, object (GDPR-style)
+  9. **Cookies & Tracking** — What we use, what we don't (no Google Analytics)
+  10. **Third-Party Links** — Not responsible for external sites
+  11. **Children & Minors** — Parental consent required for under-13, designed for Grade 8–12
+  12. **Changes to Policy** — How updates communicated
+  13. **Contact Us** — Support email and hours
+- South African POPIA-compliant messaging
+- Transparent about Anthropic's Claude API data handling
+
+#### Files Modified
+- `pages/index.js` — Softened expertise claim, added TOS/Privacy links to footer
+- `pages/assessment.js` — Added first-question disclaimer banner
+- `pages/report/[id].js` — Added footer disclaimer before action buttons
+- `pages/terms.js` — NEW, comprehensive Terms of Service
+- `pages/privacy.js` — NEW, comprehensive Privacy Policy
+
+#### Legal Compliance Notes
+
+**What This Protects**:
+- ✅ Clear legal disclaimer protects against liability claims
+- ✅ Honest messaging about AI limitations
+- ✅ Transparent about data handling (POPIA-compliant)
+- ✅ Limitation of liability clause in ToS reduces exposure
+- ✅ Privacy Policy explains Anthropic Claude API usage
+
+**Next Steps Before School Launch**:
+1. ⚠️ **Have a South African lawyer review** `pages/terms.js` and `pages/privacy.js` — ensure POPIA and consumer protection compliance
+2. Adjust terminology if needed to match your brand
+3. Update contact email (currently `support@pickmypath.co.za`) once you have one
+4. Test all pages on live deployment
+5. Use ToS + Privacy Policy as credibility assets when approaching schools ("We have comprehensive legal disclosures")
+
+#### Impact & Positioning
+- **For schools**: Shows professionalism and legal responsibility — reduces adoption friction
+- **For parents**: Clear messaging builds trust ("This is honest about what it is")
+- **For you**: Reduced legal liability while still delivering a valuable product
+- **For students**: Encourages healthy skepticism ("explore, but verify") instead of blind faith
+
+#### No Technical Debt
+- All new pages use standard Next.js patterns
+- No database schema changes
+- No API changes
+- Pages are static content (no dynamic data)
+- Print/PDF friendly (similar to existing pages)
+

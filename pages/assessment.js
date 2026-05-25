@@ -179,6 +179,18 @@ export default function Assessment() {
 
       <div style={{ maxWidth: 700, margin: '0 auto', padding: isParentSection ? '7.5rem 1.5rem 2.5rem 1.5rem' : '2.5rem 1.5rem' }}>
 
+        {/* Disclaimer Banner - only on first question */}
+        {currentQ === 0 && !isMarksScreen && (
+          <div style={{ background: '#fff0f0', border: '1px solid #f0b5b5', borderRadius: 10, padding: '1rem', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#333' }}>
+            <p style={{ margin: '0 0 0.5rem 0', fontWeight: 500 }}>
+              📋 This is a <strong>career guidance assessment</strong>, not a professional psychometric evaluation.
+            </p>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#666', lineHeight: 1.5 }}>
+              Your personalized report offers suggestions for exploration. We recommend discussing results with your school counselor or a qualified career advisor for major decisions.
+            </p>
+          </div>
+        )}
+
         {/* Progress bar */}
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-light)', marginBottom: 6 }}>
