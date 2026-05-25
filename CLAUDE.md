@@ -86,7 +86,7 @@ API endpoints follow this structure:
 ```
 
 - **Auth domain** (`pages/api/auth/`): register, login, verify email, password reset, Google OAuth, stage/student name updates
-  - **Registration** (`pages/register.js` → `/api/auth/register`): Captures both account holder name and student name separately
+  - **Registration** (`pages/register.js` → `/api/auth/register`): Captures both account holder name and student name separately; **requires explicit acceptance of Terms of Service and Privacy Policy** via checkbox before account creation (enforced on both frontend and API)
   - **Google OAuth** (`/api/auth/google`): 
     - Creates user with Google display name as `full_name` and `student_name` as null
     - Returns `needsStage` and `needsStudentName` flags
@@ -640,4 +640,45 @@ Two critical print layout bugs fixed in `pages/report/[id].js`.
 - No API changes
 - Pages are static content (no dynamic data)
 - Print/PDF friendly (similar to existing pages)
+
+---
+
+### Registration Terms Acceptance — May 2026 (continued)
+
+**Problem**: Terms of Service and Privacy Policy pages existed, but users registering were not required to explicitly accept them. This created legal exposure — users could later claim they didn't know about terms.
+
+**Solution**: Added a prominent, required checkbox to the registration form that users must check before creating an account. The checkbox links directly to the legal pages and is validated both on the frontend and API.
+
+#### Changes to `pages/register.js`
+
+- Added `termsAccepted` state variable to track checkbox state
+- Created prominent checkbox component with:
+  - Light gray background box that highlights with navy border when checked
+  - Clear wording: "I accept the Terms of Service and Privacy Policy" with clickable links
+  - Positioned immediately above the submit button (impossible to miss)
+  - Positioned above error messages (so it's seen before any validation errors)
+- Updated form submission to validate that checkbox is checked before sending request
+- Updated submit button to be **disabled** until checkbox is checked (in addition to other validation)
+
+#### Changes to `pages/api/auth/register.js`
+
+- Added `termsAccepted` parameter validation
+- Returns 400 error if `termsAccepted` is not true
+- Ensures users cannot bypass the checkbox via direct API calls
+
+#### Files Modified
+- `pages/register.js` — Added state, checkbox component, form validation
+- `pages/api/auth/register.js` — Added API-side validation
+
+#### Legal Protection
+- ✅ Users cannot claim they didn't see terms (checkbox is prominent and required)
+- ✅ Checkbox links directly to legal pages (no "hidden at bottom" excuse)
+- ✅ Both frontend and API validate acceptance (cannot bypass with direct requests)
+- ✅ Clear error message if checkbox is unchecked (guides user to correct action)
+
+#### User Experience
+- Checkbox is intuitive and follows standard patterns
+- Visual feedback (navy border highlight) when checked
+- Not disruptive to the registration flow
+- Mobile-friendly (checkbox scales appropriately)
 

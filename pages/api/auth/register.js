@@ -6,8 +6,9 @@ import { sendVerificationEmail } from '../../../lib/sendEmail'
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { fullName, studentName, email, password, stage, school } = req.body
+  const { fullName, studentName, email, password, stage, school, termsAccepted } = req.body
   if (!fullName || !studentName || !email || !password) return res.status(400).json({ error: 'Full name, student name, email and password are required.' })
+  if (!termsAccepted) return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy.' })
   if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' })
 
   const db = supabaseAdmin()

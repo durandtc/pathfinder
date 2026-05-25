@@ -12,18 +12,20 @@ export default function Register() {
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
   const [passwordMismatch, setPasswordMismatch] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     if (!form.stage) { setError('Please select your current grade or career stage.'); return }
     if (form.password !== form.passwordConfirm) { setError('Passwords do not match. Please check and try again.'); return }
+    if (!termsAccepted) { setError('You must accept the Terms of Service and Privacy Policy to create an account.'); return }
     setLoading(true)
     try {
       const res  = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, termsAccepted }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Registration failed')
@@ -117,9 +119,39 @@ export default function Register() {
               <input className="form-input" type="text" placeholder="e.g. Rondebosch Boys High, UCT, Standard Bank" value={form.school} onChange={e => setForm({ ...form, school: e.target.value })} />
             </div>
 
+            {/* Terms acceptance checkbox */}
+            <div style={{
+              background: '#f5f5f5',
+              border: `2px solid ${termsAccepted ? 'var(--navy)' : 'var(--border)'}`,
+              borderRadius: 8,
+              padding: '1rem',
+              marginBottom: '1rem',
+              transition: 'border-color 0.2s'
+            }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', margin: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={e => setTermsAccepted(e.target.checked)}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    minWidth: 20,
+                    minHeight: 20,
+                    marginTop: '2px',
+                    cursor: 'pointer',
+                    accentColor: 'var(--navy)'
+                  }}
+                />
+                <span style={{ fontSize: '0.875rem', color: 'var(--text)', lineHeight: 1.4 }}>
+                  I accept the <Link href="/terms" style={{ color: 'var(--navy)', textDecoration: 'underline' }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: 'var(--navy)', textDecoration: 'underline' }}>Privacy Policy</Link>
+                </span>
+              </label>
+            </div>
+
             {error && <p className="error-msg" style={{ marginBottom: 10 }}>{error}</p>}
 
-            <button type="submit" disabled={loading || passwordMismatch || !form.password || !form.passwordConfirm} style={{ width: '100%', padding: '13px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: loading || passwordMismatch || !form.password || !form.passwordConfirm ? 'not-allowed' : 'pointer', marginTop: '0.25rem', opacity: (loading || passwordMismatch || !form.password || !form.passwordConfirm) ? 0.7 : 1 }}>
+            <button type="submit" disabled={loading || passwordMismatch || !form.password || !form.passwordConfirm || !termsAccepted} style={{ width: '100%', padding: '13px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: loading || passwordMismatch || !form.password || !form.passwordConfirm || !termsAccepted ? 'not-allowed' : 'pointer', marginTop: '0.25rem', opacity: (loading || passwordMismatch || !form.password || !form.passwordConfirm || !termsAccepted) ? 0.7 : 1 }}>
               {loading ? 'Creating account...' : 'Create account & continue'}
             </button>
           </form>
