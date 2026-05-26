@@ -1,8 +1,11 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import Nav from '../components/Nav'
 
 export default function Privacy() {
+  const router = useRouter()
+  const returnTo = router.query.returnTo || '/'
   return (
     <>
       <Head>
@@ -200,7 +203,7 @@ export default function Privacy() {
         </section>
 
         <p style={{ textAlign: 'center', marginTop: '3rem', color: 'var(--text-light)', fontSize: '0.85rem' }}>
-          <Link href="/" style={{ color: 'var(--navy)', textDecoration: 'none' }}>← Back to Home</Link>
+          <Link href={returnTo} style={{ color: 'var(--navy)', textDecoration: 'none' }}>← Back</Link>
         </p>
       </div>
     </>

@@ -144,7 +144,7 @@ export default function Register() {
                   }}
                 />
                 <span style={{ fontSize: '0.875rem', color: 'var(--text)', lineHeight: 1.4 }}>
-                  I accept the <Link href="/terms" style={{ color: 'var(--navy)', textDecoration: 'underline' }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: 'var(--navy)', textDecoration: 'underline' }}>Privacy Policy</Link>
+                  I accept the <Link href="/terms?returnTo=/register" style={{ color: 'var(--navy)', textDecoration: 'underline' }}>Terms of Service</Link> and <Link href="/privacy?returnTo=/register" style={{ color: 'var(--navy)', textDecoration: 'underline' }}>Privacy Policy</Link>
                 </span>
               </label>
             </div>

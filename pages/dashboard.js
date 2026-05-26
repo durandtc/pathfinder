@@ -178,7 +178,7 @@ export default function Dashboard() {
                 Your interests evolve over time. A retake generates a completely new report. All previous reports are always kept and viewable.
               </p>
               <button onClick={handleRetake} style={{ background: 'transparent', color: 'var(--navy)', border: '1.5px solid var(--navy)', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}>
-                Retake for R399 + VAT
+                Retake for R{price} + VAT
               </button>
             </div>
           </div>

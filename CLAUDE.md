@@ -766,3 +766,54 @@ UPDATE users SET terms_accepted = true WHERE terms_accepted = false;
 4. **Dashboard price**: CTA shows dynamic price, matches Vercel env var setting
 5. **Graceful fallback**: If terms API fails, user still proceeds (won't block access)
 
+---
+
+### Dashboard & Legal Page Fixes — May 2026 (final)
+
+**Problem 1**: Dashboard "Want a fresh perspective?" button still showed hardcoded "R399 + VAT" instead of using the centralized `NEXT_PUBLIC_ASSESSMENT_PRICE` environment variable.
+
+**Problem 2**: When users clicked Terms of Service or Privacy Policy links from the registration form, clicking "Back" on those pages returned them to the home page instead of back to the registration form — forcing them to re-enter all their details if they wanted to continue registering.
+
+#### Solution 1: Complete Price Centralization
+
+**Fix** (`pages/dashboard.js`):
+- Line 181: Changed button text from `"Retake for R399 + VAT"` to `"Retake for R${price} + VAT"`
+- The `price` variable was already defined at component top (line 9): `const price = process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399'`
+- All three price displays now use the same dynamic variable:
+  1. Retake confirmation dialog (line 43)
+  2. Payment CTA button (line 127)
+  3. Retake card button (line 181)
+
+#### Solution 2: Smart Registration → Legal Page Navigation
+
+**Problem**: Links to Terms/Privacy from registration page went to `/terms` and `/privacy` with no way to return to the form.
+
+**Solution**: Use `returnTo` query parameter to remember where user came from.
+
+**Changes**:
+- **`pages/register.js`** — Updated links to include `?returnTo=/register`:
+  - `/terms?returnTo=/register` (was `/terms`)
+  - `/privacy?returnTo=/register` (was `/privacy`)
+- **`pages/terms.js`** — Smart back button:
+  - Added `useRouter()` hook to read `returnTo` query param
+  - Back link now uses `returnTo` query param, defaults to `/` if not provided
+  - Button text changed from "← Back to Home" to "← Back" (more generic)
+- **`pages/privacy.js`** — Same logic as Terms page
+
+**User Flow**:
+- **From registration**: User clicks Terms/Privacy → form data stays in localStorage → user reads page → clicks "Back" → returns to registration form ✓
+- **From home page**: User clicks Terms/Privacy link in footer → clicks "Back" → returns to home ✓
+- **Direct URL**: User visits `/terms` or `/privacy` directly → clicks "Back" → goes to home ✓
+
+#### Files Modified
+- `pages/dashboard.js` — Fixed hardcoded price in "Retake for R399 + VAT" button text
+- `pages/register.js` — Added `?returnTo=/register` to Terms and Privacy links
+- `pages/terms.js` — Added returnTo query param handling with smart back button
+- `pages/privacy.js` — Added returnTo query param handling with smart back button
+
+#### Impact
+- ✅ All prices now centralized — future changes only need Vercel env var update
+- ✅ Users won't lose their registration progress when reading legal docs
+- ✅ Improved user experience and reduced frustration
+- ✅ More graceful navigation across the site
+
