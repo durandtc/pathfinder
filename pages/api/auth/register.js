@@ -31,6 +31,8 @@ export default async function handler(req, res) {
     email_verified:      false,
     verify_token:        verifyToken,
     verify_token_expiry: tokenExpiry,
+    terms_accepted:      true,
+    terms_accepted_at:   new Date().toISOString(),
   }).select().single()
 
   if (error) return res.status(500).json({ error: 'Could not create account. Please try again.' })

@@ -682,3 +682,87 @@ Two critical print layout bugs fixed in `pages/report/[id].js`.
 - Not disruptive to the registration flow
 - Mobile-friendly (checkbox scales appropriately)
 
+---
+
+### Google OAuth Terms Acceptance & Centralized Pricing — May 2026 (continued)
+
+**Problem 1**: Google OAuth users bypassed the Terms of Service requirement entirely, creating legal exposure. Email-registered users had a required checkbox, but OAuth users could sign in without explicit consent.
+
+**Problem 2**: Assessment price was hardcoded as "R399" in two places in `pages/dashboard.js`, while all other price references used the `NEXT_PUBLIC_ASSESSMENT_PRICE` environment variable.
+
+#### Solution 1: Terms Acceptance for Google OAuth
+
+**Database** (`supabase-schema.sql`):
+- Added `terms_accepted` (boolean, default false) column to users table
+- Added `terms_accepted_at` (timestamptz) column to record when terms were accepted
+- Backfilled existing users with `terms_accepted = true` (they were already using the service)
+
+**API Changes**:
+- **`pages/api/auth/register.js`** — Now saves `terms_accepted: true` and `terms_accepted_at: now()` when email users register (previously validated but didn't save to DB)
+- **`pages/api/auth/google.js`** — Added `needsTermsAccepted: !user.terms_accepted` flag to response (tells frontend if user needs to accept terms)
+- **`pages/api/auth/accept-terms.js`** — NEW endpoint: `POST { }` (authenticated users only) → updates user with `terms_accepted = true, terms_accepted_at = now()`
+
+**Frontend** (`components/GoogleSignInButton.js`):
+- Added third modal in the Google OAuth flow: stage → student name → **terms acceptance** → dashboard
+- Modal shows checkbox linking to `/terms` and `/privacy` pages
+- Submit button disabled until checkbox is checked
+- Calls `/api/auth/accept-terms` on submit, then redirects to dashboard
+- Falls back gracefully: if API call fails, user still proceeds to dashboard (terms can be set later, but flag remains in DB)
+- Updated all modal transitions to check `needsTermsAccepted` flag at each step
+
+**User Flow** (new users via Google):
+1. Sign in with Google
+2. See stage selector modal → submit
+3. See student name modal → submit
+4. See terms acceptance modal (new) → check box → submit
+5. Redirect to dashboard
+
+**User Flow** (existing users, returning):
+- If `terms_accepted = true`: go straight to dashboard (no modal)
+- If `terms_accepted = false`: show terms modal before dashboard access
+
+**Database Record**:
+- ✅ Every user has `terms_accepted` boolean + timestamp
+- ✅ Legal compliance: can prove when each user accepted terms
+- ✅ Backcompat: existing users auto-marked as having accepted
+
+#### Solution 2: Centralized Assessment Price
+
+**Problem**: Dashboard had hardcoded R399 in:
+1. Retake assessment confirmation dialog (line ~42)
+2. Payment CTA button text (line ~126)
+
+Other pages already used `process.env.NEXT_PUBLIC_ASSESSMENT_PRICE`:
+- `pages/index.js` ✓
+- `pages/payment.js` ✓
+- `pages/api/payment/initiate.js` (reads from database config, falls back to env var) ✓
+
+**Fix** (`pages/dashboard.js`):
+- Added at component top: `const price = process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399'`
+- Replaced both hardcoded R399 strings with dynamic `R${price}`
+
+**Benefit**: Future price changes (e.g., R499) require only updating Vercel env var or system_config in admin panel — no code changes needed.
+
+#### Files Modified
+- `supabase-schema.sql` — Added terms_accepted migration + backfill
+- `pages/api/auth/register.js` — Saves terms_accepted for email users
+- `pages/api/auth/google.js` — Returns needsTermsAccepted flag
+- `pages/api/auth/accept-terms.js` — NEW: saves terms acceptance
+- `components/GoogleSignInButton.js` — Added terms acceptance modal + logic
+- `pages/dashboard.js` — Centralized price via env var
+
+#### Database Migration Required
+Before deploying, run in Supabase SQL Editor:
+```sql
+ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted boolean DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at timestamptz;
+UPDATE users SET terms_accepted = true WHERE terms_accepted = false;
+```
+
+#### Verification
+1. **New Google user**: Goes through all 3 modals (stage → name → terms) → terms_accepted = true in DB
+2. **Email user**: Checkbox still required → terms_accepted = true in DB
+3. **Returning user (no modal)**: Goes straight to dashboard if already accepted
+4. **Dashboard price**: CTA shows dynamic price, matches Vercel env var setting
+5. **Graceful fallback**: If terms API fails, user still proceeds (won't block access)
+

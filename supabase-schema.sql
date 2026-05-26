@@ -122,3 +122,9 @@ create policy if not exists "Service role full access - audit_log"     on audit_
 alter table users add column if not exists student_name text;
 -- For existing users, backfill student_name with full_name to maintain data consistency
 update users set student_name = full_name where student_name is null;
+
+-- ── MIGRATION: Add terms acceptance tracking ────
+alter table users add column if not exists terms_accepted boolean default false;
+alter table users add column if not exists terms_accepted_at timestamptz;
+-- For existing users, mark as having accepted terms (they were using the service)
+update users set terms_accepted = true where terms_accepted = false;

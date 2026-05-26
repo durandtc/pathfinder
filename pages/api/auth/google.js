@@ -55,6 +55,7 @@ export default async function handler(req, res) {
       latestReportId:         report?.id || null,
       needsStage:             !user.grade,  // flag if stage not yet set
       needsStudentName:       !user.student_name,  // flag if student name not set
+      needsTermsAccepted:     !user.terms_accepted,  // flag if terms not yet accepted
     },
   })
 }

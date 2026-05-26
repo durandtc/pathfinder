@@ -9,11 +9,14 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
   const [error, setError]             = useState('')
   const [showStageModal, setShowStageModal] = useState(false)
   const [showStudentNameModal, setShowStudentNameModal] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
   const [pendingUser, setPendingUser]  = useState(null)
   const [selectedStage, setSelectedStage] = useState('')
   const [studentName, setStudentName] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [savingStage, setSavingStage]  = useState(false)
   const [savingStudentName, setSavingStudentName] = useState(false)
+  const [savingTerms, setSavingTerms]  = useState(false)
 
   async function handleGoogleSignIn() {
     setError('')
@@ -53,6 +56,15 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
         return
       }
 
+      // If this Google user has not accepted terms yet — show the terms prompt
+      if (data.user.needsTermsAccepted) {
+        setPendingUser(data.user)
+        setShowTermsModal(true)
+        setTermsAccepted(false)
+        setLoading(false)
+        return
+      }
+
       localStorage.setItem('pmp_user', JSON.stringify(data.user))
       router.push('/dashboard')
 
@@ -88,6 +100,11 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
         setShowStageModal(false)
         setShowStudentNameModal(true)
         setStudentName('')
+      } else if (updatedUser.needsTermsAccepted) {
+        setPendingUser(updatedUser)
+        setShowStageModal(false)
+        setShowTermsModal(true)
+        setTermsAccepted(false)
       } else {
         localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
         router.push('/dashboard')
@@ -100,6 +117,11 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
         setShowStageModal(false)
         setShowStudentNameModal(true)
         setStudentName('')
+      } else if (updatedUser.needsTermsAccepted) {
+        setPendingUser(updatedUser)
+        setShowStageModal(false)
+        setShowTermsModal(true)
+        setTermsAccepted(false)
       } else {
         localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
         router.push('/dashboard')
@@ -121,14 +143,52 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
       if (!res.ok) throw new Error('Failed to save student name')
 
       const updatedUser = { ...pendingUser, studentName: studentName.trim(), needsStudentName: false }
+      // If they also need to accept terms, show that modal next
+      if (updatedUser.needsTermsAccepted) {
+        setPendingUser(updatedUser)
+        setShowStudentNameModal(false)
+        setShowTermsModal(true)
+        setTermsAccepted(false)
+      } else {
+        localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
+        router.push('/dashboard')
+      }
+    } catch {
+      // Even if save fails, let them in — student name can be set later
+      const updatedUser = { ...pendingUser, needsStudentName: false }
+      if (updatedUser.needsTermsAccepted) {
+        setPendingUser(updatedUser)
+        setShowStudentNameModal(false)
+        setShowTermsModal(true)
+        setTermsAccepted(false)
+      } else {
+        localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
+        router.push('/dashboard')
+      }
+    } finally {
+      setSavingStudentName(false)
+    }
+  }
+
+  async function handleTermsSubmit() {
+    if (!termsAccepted) return
+    setSavingTerms(true)
+    try {
+      const res = await fetch('/api/auth/accept-terms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!res.ok) throw new Error('Failed to save terms acceptance')
+
+      const updatedUser = { ...pendingUser, needsTermsAccepted: false }
       localStorage.setItem('pmp_user', JSON.stringify(updatedUser))
       router.push('/dashboard')
     } catch {
-      // Even if save fails, let them in — student name can be set later
-      localStorage.setItem('pmp_user', JSON.stringify({ ...pendingUser, needsStudentName: false }))
+      // Even if save fails, let them in — terms can be set later
+      localStorage.setItem('pmp_user', JSON.stringify({ ...pendingUser, needsTermsAccepted: false }))
       router.push('/dashboard')
     } finally {
-      setSavingStudentName(false)
+      setSavingTerms(false)
     }
   }
 
@@ -223,6 +283,38 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }) {
               style={{ width: '100%', padding: '13px', background: studentName.trim() ? 'var(--navy)' : 'var(--border)', color: studentName.trim() ? '#fff' : 'var(--text-light)', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: studentName.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}
             >
               {savingStudentName ? 'Saving...' : 'Continue to Dashboard →'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Terms acceptance modal */}
+      {showTermsModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,31,61,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'var(--white)', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', fontSize: '1.4rem', marginBottom: '0.5rem' }}>
+              One last step — Terms & Privacy
+            </h3>
+            <p style={{ color: 'var(--text-mid)', fontSize: '0.875rem', marginBottom: '1.25rem', lineHeight: 1.6, fontWeight: 300 }}>
+              PickMyPath is a career guidance tool to help you explore careers. We take your privacy and consent seriously.
+            </p>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px', background: 'var(--cream)', borderRadius: 8, border: termsAccepted ? '1.5px solid var(--navy)' : '1.5px solid var(--border)', cursor: 'pointer', marginBottom: '1.25rem', transition: 'all 0.2s' }}>
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={e => setTermsAccepted(e.target.checked)}
+                style={{ marginTop: 2, cursor: 'pointer', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-mid)', lineHeight: 1.5 }}>
+                I accept the <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--navy)', fontWeight: 500, textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--navy)', fontWeight: 500, textDecoration: 'underline' }}>Privacy Policy</a>
+              </span>
+            </label>
+            <button
+              onClick={handleTermsSubmit}
+              disabled={!termsAccepted || savingTerms}
+              style={{ width: '100%', padding: '13px', background: termsAccepted ? 'var(--navy)' : 'var(--border)', color: termsAccepted ? '#fff' : 'var(--text-light)', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 500, cursor: termsAccepted ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}
+            >
+              {savingTerms ? 'Saving...' : 'Continue to Dashboard →'}
             </button>
           </div>
         </div>

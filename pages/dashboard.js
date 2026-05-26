@@ -6,6 +6,7 @@ import Nav from '../components/Nav'
 
 export default function Dashboard() {
   const router = useRouter()
+  const price = process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399'
   const [user, setUser]         = useState(null)
   const [reports, setReports]   = useState([])
   const [loading, setLoading]   = useState(true)
@@ -39,7 +40,7 @@ export default function Dashboard() {
 
   async function handleRetake() {
     const confirmed = window.confirm(
-      'Taking a new assessment requires a new payment of R399 + VAT.\n\nYour previous reports will remain saved and viewable.\n\nContinue to payment?'
+      `Taking a new assessment requires a new payment of R${price} + VAT.\n\nYour previous reports will remain saved and viewable.\n\nContinue to payment?`
     )
     if (confirmed) router.push('/payment')
   }
@@ -123,7 +124,7 @@ export default function Dashboard() {
               Your 45-question AI-powered assessment maps your interests, values, and strengths — plus your academic marks — to real South African careers and the Grade 10 subjects you need.
             </p>
             <Link href="/payment" style={{ display: 'inline-block', background: 'var(--gold)', color: 'var(--navy)', borderRadius: 8, padding: '13px 28px', textDecoration: 'none', fontWeight: 500 }}>
-              Start My Assessment — R399
+              Start My Assessment — R{price}
             </Link>
           </div>
         )}
