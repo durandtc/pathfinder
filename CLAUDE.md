@@ -960,31 +960,48 @@ UPDATE users SET terms_accepted = true WHERE terms_accepted = false;
 
 ### PayFast Signature Bug Fixes — May 29, 2026
 
-**Problem**: During live testing, PayFast was rejecting payments with error: "Generated signature does not match submitted signature."
+**Problem**: During initial live testing, PayFast was rejecting payments with error: "Generated signature does not match submitted signature."
 
-**Root Causes**:
-1. **Inverted sandbox logic** (`pages/api/payment/initiate.js`, line 25):
-   - Code was: `const sandbox = process.env.PAYFAST_SANDBOX !== 'true'`
-   - Meant: If `PAYFAST_SANDBOX=true`, the code treated it as `false` and forced live mode
-   - This caused the code to attempt PayFast live integration when testing with sandbox mode
+**Root Cause**: **Inverted sandbox logic** (`pages/api/payment/initiate.js`, line 25):
+- Code was: `const sandbox = process.env.PAYFAST_SANDBOX !== 'true'`
+- Meant: If `PAYFAST_SANDBOX=true`, the code treated it as `false` and forced live mode
+- This caused the code to attempt PayFast live integration when testing with sandbox mode
 
-2. **Merchant key leaked into signature data** (`pages/api/payment/initiate.js`, line 58):
-   - `merchant_key` was included in the `paymentData` object sent to PayFast
-   - The signature algorithm (line 5-10) includes all non-empty object properties in the signature calculation
-   - PayFast rejected the request because `merchant_key` should never be transmitted to PayFast (only used locally to generate the signature)
-
-**Solution**:
-- **Line 25**: Changed logic to `const sandbox = process.env.PAYFAST_SANDBOX === 'true'`
-- **Line 57**: Removed `merchant_key: merchantKey` from `paymentData` object (signature still generated correctly on line 71 with access to merchantKey variable)
+**Solution**: Changed line 25 to: `const sandbox = process.env.PAYFAST_SANDBOX === 'true'`
 
 **Files Modified**:
-- `pages/api/payment/initiate.js` — Fixed sandbox logic and removed merchant_key from payment data
+- `pages/api/payment/initiate.js` — Fixed sandbox logic
+
+---
+
+### PayFast Merchant Key Fix — May 29, 2026 (continued)
+
+**Problem**: After fixing sandbox logic, new error appeared: "400 Bad Request - The merchant key field is required."
+
+**Root Cause**: Previous documentation incorrectly stated that `merchant_key` should be removed from `paymentData`. However, PayFast's API **requires** the merchant_key to be included in the request data (it's not just for signature generation — it must be transmitted to PayFast).
+
+**Solution**: 
+- **Line 57**: Added `merchant_key: merchantKey` back to `paymentData` object
+- The signature generation already uses merchant_key (line 10); it also needs to be in the request
+
+**Corrected Code** (`pages/api/payment/initiate.js`):
+```javascript
+const paymentData = {
+  merchant_id: merchantId,
+  merchant_key: merchantKey,  // ← Required by PayFast API
+  return_url: ...,
+  ...
+}
+paymentData.signature = generatePayFastSignature(paymentData, merchantKey)
+```
+
+**Files Modified**:
+- `pages/api/payment/initiate.js` — Added merchant_key to paymentData
 
 **Verification**:
 - Push changes to GitHub → Vercel redeploys
-- Test with `PAYFAST_SANDBOX=false` in Vercel env vars
-- Payment form submission should now successfully validate signature at PayFast
-- User will be redirected to PayFast payment page (or sandbox if using sandbox credentials)
+- Try another payment — should no longer get "merchant key field is required" error
+- User will be redirected to PayFast payment page
 
 ---
 

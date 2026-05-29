@@ -55,6 +55,7 @@ export default async function handler(req, res) {
   const payFastUrl = 'https://www.payfast.co.za/eng/process'
   const paymentData = {
     merchant_id: merchantId,
+    merchant_key: merchantKey,
     return_url: `${appUrl}/payment/success?payment_id=${payment.id}`,
     cancel_url: `${appUrl}/payment`,
     notify_url: `${appUrl}/api/payment/verify`,
