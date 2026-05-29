@@ -1172,3 +1172,65 @@ function generatePayFastSignature(data, merchantKey) {
 - Try another payment — should redirect to PayFast payment page without signature error
 - Payment should complete successfully
 
+---
+
+### PayFast Signature Algorithm Rewrite — May 29, 2026 (final)
+
+**Problem**: Payments continued to fail with "400 Bad Request - generated signature does not match submitted signature" even after all previous fixes.
+
+**Root Cause**: Three fundamental bugs were identified in the signature generation:
+
+1. **`merchant_key` excluded from hash (wrong)** — PayFast includes ALL POST fields except `signature` itself in the hash calculation. The code was incorrectly filtering out `merchant_key`.
+
+2. **Passphrase handled incorrectly** — PayFast uses a separate account-level passphrase (set in PayFast merchant account → Settings → Integration) that is appended to the hash string as `&passphrase=VALUE`. The code was appending the `merchant_key` directly instead, which is a completely different value.
+
+3. **URL encoding mismatch** — PayFast's backend uses PHP's `urlencode()` which encodes spaces as `+`. JavaScript's `encodeURIComponent` encodes spaces as `%20`. Fields like `item_name` and `item_description` contain spaces, causing hash mismatches.
+
+**Solution**: Complete rewrite of `generatePayFastSignature()`:
+
+```javascript
+function generatePayFastSignature(data, passphrase = null) {
+  const str = Object.entries(data)
+    .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
+    .join('&')
+  const hashStr = passphrase ? `${str}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : str
+  return crypto.createHash('md5').update(hashStr).digest('hex')
+}
+```
+
+And the call site updated to use a separate passphrase env var:
+```javascript
+const passphrase = process.env.PAYFAST_PASSPHRASE || null
+paymentData.signature = generatePayFastSignature(paymentData, passphrase)
+```
+
+**New Environment Variable Required**:
+- `PAYFAST_PASSPHRASE` — Set in Vercel to match the passphrase configured in PayFast merchant account (Settings → Integration → Passphrase). If no passphrase is set in PayFast, leave this env var empty or omit it entirely.
+
+**Environment Variables Summary (complete list)**:
+- `PAYFAST_MERCHANT_ID` — Merchant ID from PayFast account
+- `PAYFAST_MERCHANT_KEY` — Merchant key from PayFast account
+- `PAYFAST_PASSPHRASE` — Account passphrase from PayFast Settings → Integration (optional, but must match exactly if set)
+- `PAYFAST_SANDBOX` — `true` for auto-complete sandbox mode, `false` for live payments
+
+**Files Modified**:
+- `pages/api/payment/initiate.js` — Rewrote signature function (include merchant_key in hash, fix passphrase handling, fix URL encoding)
+
+---
+
+### Payment Page: Conditional Sandbox Banner — May 29, 2026
+
+**Problem**: The "🧪 Testing mode: PayFast sandbox is active" banner was hardcoded on the payment page and always visible — even in live mode, where it would confuse paying customers.
+
+**Solution**: Made the banner conditional on `isSandbox` state, which is only set to `true` after the payment initiation API responds with `data.sandbox === true`. With `PAYFAST_SANDBOX=false`, the banner never renders.
+
+**Changes** (`pages/payment.js`):
+- Added `isSandbox` state (default `false`)
+- Set `isSandbox(true)` only when API returns `data.sandbox` flag
+- Wrapped banner in `{isSandbox && (...)}` conditional
+
+**Files Modified**:
+- `pages/payment.js` — Made sandbox testing banner conditional on API response
+

@@ -8,6 +8,7 @@ export default function Payment() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isSandbox, setIsSandbox] = useState(false)
 
   const price = parseInt(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
   const vat = parseInt(process.env.NEXT_PUBLIC_VAT_RATE || '15')
@@ -31,6 +32,8 @@ export default function Payment() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Payment initiation failed')
+
+      if (data.sandbox) setIsSandbox(true)
 
       // In sandbox mode, skip PayFast and go straight to assessment
       if (data.sandbox) {
@@ -80,13 +83,15 @@ export default function Payment() {
             </div>
           </div>
 
-          <div style={{ background: '#fff8ec', border: '1px solid #e8b856', borderRadius: 8, padding: '12px 14px', marginBottom: '1.5rem' }}>
-            <p style={{ fontSize: '0.85rem', color: '#5a4010', margin: 0 }}>
-              <strong>🧪 Testing mode:</strong> PayFast sandbox is active. Click below to skip payment and go straight to your assessment. No real payment will be taken.
-            </p>
-          </div>
+          {isSandbox && (
+            <div style={{ background: '#fff8ec', border: '1px solid #e8b856', borderRadius: 8, padding: '12px 14px', marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '0.85rem', color: '#5a4010', margin: 0 }}>
+                <strong>🧪 Testing mode:</strong> PayFast sandbox is active. Click below to skip payment and go straight to your assessment. No real payment will be taken.
+              </p>
+            </div>
+          )}
 
-          {error && <p className="error-msg" style={{ marginBottom: '1rem' }}>{error}</p>}
+          {error &&<p className="error-msg" style={{ marginBottom: '1rem' }}>{error}</p>}
 
           <button onClick={handlePayment} disabled={loading} style={{
             width: '100%', padding: '14px', background: 'var(--gold)', color: 'var(--navy)',
