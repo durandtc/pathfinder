@@ -1,13 +1,14 @@
 import { supabaseAdmin } from '../../../lib/supabase'
 import crypto from 'crypto'
 
-function generatePayFastSignature(data, merchantKey) {
+function generatePayFastSignature(data, passphrase = null) {
   const str = Object.entries(data)
-    .filter(([k, v]) => k !== 'merchant_key' && k !== 'signature' && v !== null && v !== undefined && v !== '')
+    .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
     .join('&')
-  return crypto.createHash('md5').update(str + merchantKey).digest('hex')
+  const hashStr = passphrase ? `${str}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : str
+  return crypto.createHash('md5').update(hashStr).digest('hex')
 }
 
 export default async function handler(req, res) {
@@ -69,7 +70,8 @@ export default async function handler(req, res) {
     custom_str1: user.id,
   }
 
-  paymentData.signature = generatePayFastSignature(paymentData, merchantKey)
+  const passphrase = process.env.PAYFAST_PASSPHRASE || null
+  paymentData.signature = generatePayFastSignature(paymentData, passphrase)
 
   await db.from('payments').update({ payfast_payment_id: 'PENDING' }).eq('id', payment.id)
   return res.status(200).json({ sandbox: false, paymentUrl: payFastUrl, paymentData })
