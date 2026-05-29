@@ -1,4 +1,14 @@
 import { supabaseAdmin } from '../../../lib/supabase'
+import crypto from 'crypto'
+
+function generatePayFastSignature(data, merchantKey) {
+  const str = Object.entries(data)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&')
+  return crypto.createHash('md5').update(str + merchantKey).digest('hex')
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -12,10 +22,13 @@ export default async function handler(req, res) {
   const cfg = {}
   cfgRows?.forEach(r => { cfg[r.key_name] = r.plain_value })
 
-  const sandbox     = cfg.payfast_sandbox !== 'false'
-  const priceExVat  = parseFloat(cfg.assessment_price_zar || process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
-  const vatRate     = parseFloat(cfg.vat_rate_pct || process.env.NEXT_PUBLIC_VAT_RATE || '15')
+  const sandbox     = process.env.PAYFAST_SANDBOX !== 'true'
+  const merchantId  = process.env.PAYFAST_MERCHANT_ID
+  const merchantKey = process.env.PAYFAST_MERCHANT_KEY
+  const priceExVat  = parseFloat(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
+  const vatRate     = parseFloat(process.env.NEXT_PUBLIC_VAT_RATE || '15')
   const totalAmount = (priceExVat * (1 + vatRate / 100)).toFixed(2)
+  const appUrl      = process.env.NEXT_PUBLIC_APP_URL || 'https://yourdomain.co.za'
 
   const { data: user } = await db.from('users').select('*').eq('id', userId).single()
   if (!user) return res.status(404).json({ error: 'User not found' })
@@ -31,33 +44,33 @@ export default async function handler(req, res) {
     }).eq('id', payment.id)
 
     await db.from('assessments').insert({ user_id: userId, payment_id: payment.id, status: 'not_started' })
-    await db.from('audit_log').insert({ action: 'Sandbox payment completed', details: `User ${user.email} · R${totalAmount}`, performed_by: 'system' })
+    await db.from('audit_log').insert({ action: 'PayFast sandbox payment completed', details: `User ${user.email} · R${totalAmount}`, performed_by: 'system' })
     return res.status(200).json({ sandbox: true })
   }
 
-  // Live Yoco payment
-  const yocoSecretKey = process.env.YOCO_SECRET_KEY
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://yourdomain.co.za'
-
-  if (!yocoSecretKey) {
-    return res.status(500).json({ error: 'YOCO_SECRET_KEY not configured in environment variables.' })
+  if (!merchantId || !merchantKey) {
+    return res.status(500).json({ error: 'PayFast credentials not configured. Set payfast_merchant_id and payfast_merchant_key in system_config.' })
   }
 
-  const yocoRes = await fetch('https://payments.yoco.com/api/checkouts', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${yocoSecretKey}` },
-    body: JSON.stringify({
-      amount: Math.round(parseFloat(totalAmount) * 100),
-      currency: 'ZAR',
-      cancelUrl:  `${appUrl}/payment`,
-      successUrl: `${appUrl}/payment/success?payment_id=${payment.id}`,
-      metadata: { payment_id: payment.id, user_id: userId, user_email: user.email },
-    }),
-  })
+  const payFastUrl = 'https://www.payfast.co.za/eng/process'
+  const paymentData = {
+    merchant_id: merchantId,
+    merchant_key: merchantKey,
+    return_url: `${appUrl}/payment/success?payment_id=${payment.id}`,
+    cancel_url: `${appUrl}/payment`,
+    notify_url: `${appUrl}/api/payment/verify`,
+    name_first: user.full_name?.split(' ')[0] || 'Customer',
+    name_last: user.full_name?.split(' ').slice(1).join(' ') || '',
+    email_address: user.email,
+    m_payment_id: payment.id,
+    amount: totalAmount,
+    item_name: 'PickMyPath Career Assessment',
+    item_description: 'Grade 9 Career Guidance Assessment',
+    custom_str1: user.id,
+  }
 
-  const yocoData = await yocoRes.json()
-  if (!yocoRes.ok) return res.status(500).json({ error: `Yoco error: ${yocoData.message || 'Unknown'}` })
+  paymentData.signature = generatePayFastSignature(paymentData, merchantKey)
 
-  await db.from('payments').update({ payfast_payment_id: yocoData.id }).eq('id', payment.id)
-  return res.status(200).json({ sandbox: false, paymentUrl: yocoData.redirectUrl })
+  await db.from('payments').update({ payfast_payment_id: 'PENDING' }).eq('id', payment.id)
+  return res.status(200).json({ sandbox: false, paymentUrl: payFastUrl, paymentData })
 }

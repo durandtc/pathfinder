@@ -18,6 +18,13 @@ export default function Privacy() {
           Last updated: May 2026
         </p>
 
+        <section style={{ marginBottom: '2.5rem', padding: '1.5rem', background: '#fef8f0', borderRadius: 12, borderLeft: '4px solid var(--gold)' }}>
+          <p style={{ color: 'var(--navy)', margin: '0 0 0.5rem 0', fontWeight: 500 }}>❓ Questions about your privacy?</p>
+          <p style={{ color: 'var(--text-mid)', margin: 0, fontSize: '0.9rem' }}>
+            Email us at <a href="mailto:support@pickmypath.co.za" style={{ color: '#0f1f3d', fontWeight: 500, textDecoration: 'none' }}>support@pickmypath.co.za</a> (Monday–Friday, 9am–5pm SAST)
+          </p>
+        </section>
+
         <section style={{ marginBottom: '2rem' }}>
           <h2 style={{ color: 'var(--navy)', fontSize: '1.2rem', marginBottom: '0.5rem' }}>1. Overview</h2>
           <p style={{ color: 'var(--text-mid)', lineHeight: 1.7 }}>

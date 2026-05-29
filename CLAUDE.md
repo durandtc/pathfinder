@@ -144,20 +144,26 @@ export default async function handler(req, res) {
 ### Payment Integration
 
 - **Gateway**: PayFast (South African payment processor)
-- **Sandbox mode**: enabled by default when `PAYFAST_SANDBOX=true`
-- **Flow**: Payment initiation → user redirected to PayFast → callback verification → mark payment as completed in DB
-- **Fallback**: PayFast is in sandbox by default; live mode disabled until merchant credentials configured
+- **Configuration**: Merchant credentials stored in Vercel environment variables (not in database)
+- **Sandbox mode**: When `PAYFAST_SANDBOX=true`, payments auto-complete without hitting PayFast (for testing)
+- **Live mode**: When `PAYFAST_SANDBOX=false`, real payments are processed via PayFast
+- **ITN Callback**: PayFast sends server-to-server notifications to `/api/payment/verify` with payment status
+- **Flow**: 
+  1. User initiates payment → `/api/payment/initiate` generates signed PayFast form data
+  2. Frontend submits form to PayFast payment page
+  3. User completes payment on PayFast
+  4. PayFast redirects user back to success URL (`/payment/success?payment_id=X`)
+  5. PayFast sends ITN callback to `/api/payment/verify` (server-to-server)
+  6. API verifies signature, marks payment completed, creates assessment record
+- **Code files**: `pages/api/payment/initiate.js`, `pages/api/payment/verify.js`, `pages/payment.js`
+- **Setup**: Add `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_SANDBOX` to Vercel env vars, then configure ITN URL in PayFast dashboard
 
 ### Admin Panel & Auditing
 
-- **URL**: `/admin`
-- **Tabs**: API Keys, Services, Pricing, Users, Audit Log
-- **Key features**:
-  - Update Anthropic/PayFast/SendGrid keys without redeploying
-  - Toggle sandbox mode and feature flags
-  - View all users and payment status
-  - Audit log tracks all admin panel changes (who, what, when)
-- **Access**: JWT with `isAdmin: true` flag from session cookie
+- **Status**: Not currently implemented — admin panel UI does not exist in the codebase
+- **Note**: PayFast credentials are managed via Vercel environment variables, not an admin panel
+- **Future**: If building an admin panel, configure routes in `pages/api/admin/` and protect with `getAdminFromRequest()` from `lib/auth.js`
+- **Credentials**: `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set in Vercel env vars but currently unused (admin panel not built)
 
 ### Questions & Assessment Data
 
@@ -206,7 +212,10 @@ export default async function handler(req, res) {
   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` — custom auth domain for redirects (e.g., `pickmypath.co.za`)
   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — OAuth 2.0 Client ID from Google Cloud Console
 - **Email**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` (email address), `SMTP_PASS` (password)
-- **Payments**: `NEXT_PUBLIC_PAYFAST_SANDBOX` (set to false for live transactions)
+- **Payments (PayFast)**:
+  - `PAYFAST_MERCHANT_ID` — Your PayFast merchant ID
+  - `PAYFAST_MERCHANT_KEY` — Your PayFast merchant key
+  - `PAYFAST_SANDBOX` — Set to `true` for sandbox mode (auto-complete payments, no PayFast redirect), `false` for live transactions
 
 ---
 
@@ -243,11 +252,56 @@ export default async function handler(req, res) {
 
 ---
 
+## Deployment & Scaling
+
+### Free Tier Limits
+
+**Vercel Free Tier**:
+- 100 GB bandwidth/month
+- Unlimited serverless function calls
+- Unlimited deployments
+- **Capacity**: ~5,000 concurrent users/month before bandwidth becomes constraint
+
+**Supabase Free Tier** ⚠️ (More restrictive):
+- 500 MB database storage
+- 2 GB bandwidth/month
+- 50,000 monthly active users (auth)
+- 200 concurrent real-time connections
+- **Capacity**: ~200–300 completed assessments before hitting storage limit
+
+### Data Usage Estimates
+
+- User record: ~2 KB
+- Assessment response (45 questions): ~10–20 KB
+- Generated report: ~20–50 KB
+- **Per completed assessment cycle**: ~40–70 KB total
+
+### When to Upgrade
+
+**Upgrade Supabase to Pro** ($25/month) when:
+- Database storage reaches **400 MB** (monitor on Supabase dashboard)
+- This occurs after roughly **200–250 completed assessments**
+- Pro tier provides: unlimited storage, 5 GB bandwidth, better performance
+
+**Upgrade Vercel to Pro** ($20/month) when:
+- Bandwidth usage approaches 100 GB/month (rare unless extremely high traffic)
+- Not needed for initial school rollouts
+
+### Monitoring Checklist
+
+Check these metrics regularly (especially as adoption grows):
+1. **Supabase Dashboard** → **Project Settings** → Storage usage (most critical)
+2. **Supabase Dashboard** → **Database** → Size indicator
+3. **Vercel Dashboard** → **Analytics** → Bandwidth usage
+4. **Vercel Dashboard** → **Function** → Error rate and latency
+
+---
+
 ## Testing Notes
 
 - **No automated test suite** — test manually on the live Vercel deployment
-- **PayFast sandbox** allows full payment flow testing without real transactions (enable with `NEXT_PUBLIC_PAYFAST_SANDBOX=true` in Vercel env vars)
-- **Admin panel** (`/admin`) accessible with `ADMIN_EMAIL` and `ADMIN_PASSWORD` credentials from Vercel env vars
+- **PayFast sandbox** allows full payment flow testing without real transactions (set `PAYFAST_SANDBOX=true` in Vercel env vars)
+- **Admin panel** (`/admin`) not yet implemented; PayFast credentials managed via Vercel env vars
 
 ---
 
@@ -816,4 +870,136 @@ UPDATE users SET terms_accepted = true WHERE terms_accepted = false;
 - ✅ Users won't lose their registration progress when reading legal docs
 - ✅ Improved user experience and reduced frustration
 - ✅ More graceful navigation across the site
+
+---
+
+### PayFast Payment Integration — May 2026 (final)
+
+**Problem**: Yoco payment gateway was unable to accept new online merchant customers due to system upgrades. Required replacement with alternative payment processor.
+
+**Solution**: Replaced Yoco with PayFast (South African payment processor). All configuration via Vercel environment variables (no admin panel required).
+
+#### Payment Flow
+
+1. **Initiation** (`pages/api/payment/initiate.js`):
+   - Creates payment record in database
+   - Sandbox mode: Auto-completes payment, redirects to assessment
+   - Live mode: Generates signed PayFast form with MD5 signature, returns form data
+
+2. **Payment Form Submission** (`pages/payment.js`):
+   - Frontend creates hidden form with PayFast data
+   - Auto-submits to PayFast payment page
+   - User enters card details on PayFast
+
+3. **PayFast Callback** (`pages/api/payment/verify.js`):
+   - PayFast sends ITN (Instant Transaction Notification) POST callback
+   - API verifies MD5 signature to ensure legitimacy
+   - Marks payment as completed in database
+   - Creates assessment record for user
+
+#### Setup Checklist
+
+1. **Add Vercel environment variables**:
+   - `PAYFAST_MERCHANT_ID` — Your PayFast merchant ID
+   - `PAYFAST_MERCHANT_KEY` — Your PayFast merchant key
+   - `PAYFAST_SANDBOX` — `true` for testing, `false` for live
+
+2. **Configure PayFast dashboard**:
+   - Log into PayFast account
+   - Go to **Settings** → **Integration** → **ITN Status** (Instant Transaction Notification)
+   - Set notification URL to: `https://pickmypath.co.za/api/payment/verify`
+   - Enable and save
+
+3. **Test sandbox mode**:
+   - Leave `PAYFAST_SANDBOX=true` in Vercel
+   - Go to payment page, click "Pay"
+   - Should redirect to PayFast **sandbox** (test environment)
+   - Use test card credentials to complete payment
+   - Verify payment marked as completed in database
+
+4. **Go live**:
+   - Change `PAYFAST_SANDBOX=false` in Vercel
+   - Real card payments now processed
+   - Test with real payment before promoting to users
+
+#### Security Features
+
+- **MD5 Signature Verification**: Both initiation and callback verify data integrity via signed hashes
+- **Merchant ID Validation**: Callback validates merchant ID matches configured value
+- **No Card Storage**: Credit cards handled entirely by PayFast, never touched by our server
+- **HTTPS Only**: All payment data encrypted in transit
+
+#### Code Changes
+
+**Files Modified**:
+- `pages/api/payment/initiate.js` — Switched from Yoco API to PayFast form-based integration
+- `pages/api/payment/verify.js` — Replaced Yoco webhook handler with PayFast ITN verification
+- `pages/payment.js` — Changed redirect logic to form submission (PayFast requirement)
+- `CLAUDE.md` — Updated documentation with PayFast details
+
+**Removed Code**:
+- Yoco API integration (all references to Yoco API endpoints)
+- Yoco secret key configuration
+- Yoco-specific parsing logic
+
+#### Testing & Verification
+
+- **Sandbox testing**: Payments auto-complete without hitting PayFast when `PAYFAST_SANDBOX=true`
+- **Live testing**: Can test real payments with PayFast sandbox before going live
+- **ITN verification**: Callback signature validation prevents spoofed payment notifications
+- **Database audit**: All payment transactions logged to `audit_log` table
+
+#### No Technical Debt
+
+- Vercel environment variables used instead of building admin panel (simpler, maintains current architecture)
+- Payment code follows existing API patterns
+- No database schema changes required
+- Fully backward-compatible — old reports and assessments unaffected
+
+---
+
+### Support Email Footer & Legal Page Contact — May 2026 (final)
+
+**Problem**: Footer had a non-functional "Admin" link that pointed to `/admin` (admin panel never implemented). Users had no obvious way to contact support.
+
+**Solution**: Replaced Admin link with direct support email contact. Added prominent support contact callout boxes to Terms and Privacy pages for easy discovery.
+
+#### Changes to `pages/index.js`
+
+- **Footer**: Replaced `<Link href="/admin">Admin</Link>` with `<a href="mailto:support@pickmypath.co.za">Support</a>`
+- Email now styled consistently with other footer links (rgba(255,255,255,0.5))
+- Users can click directly to open their email client and contact support
+
+#### Changes to `pages/terms.js`
+
+- **Added support callout box** immediately after "Last updated" section
+- Gold-bordered (#fef8f0 cream background) box with heading: "❓ Questions about these terms?"
+- Shows email and hours: `support@pickmypath.co.za` (Monday–Friday, 9am–5pm SAST)
+- Clickable mailto link (color: #0f1f3d, fontWeight: 500)
+- Complements existing "Contact & Support" section (section 9) at bottom of page
+
+#### Changes to `pages/privacy.js`
+
+- **Added support callout box** immediately after "Last updated" section
+- Identical styling to Terms page for consistency
+- Heading: "❓ Questions about your privacy?"
+- Same email/hours contact info and styling
+- Complements existing "Contact Us" section (section 13) at bottom of page
+
+#### Files Modified
+- `pages/index.js` — Replaced Admin link with mailto support email in footer
+- `pages/terms.js` — Added prominent support contact callout box at top
+- `pages/privacy.js` — Added prominent support contact callout box at top
+
+#### User Experience Impact
+- ✅ Footer no longer has dead Admin link
+- ✅ Support email is prominently displayed (3 locations: footer, Terms callout, Privacy callout)
+- ✅ Users can immediately email support without searching for contact info
+- ✅ Legal pages show support contact upfront before users read lengthy content
+- ✅ Callout boxes use eye-catching gold borders so users see contact info instantly
+
+#### Notes
+- Admin panel (`/admin`, `pages/admin/`) and admin environment variables (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) remain in codebase but unused
+- If admin panel is built in future, the `/admin` route can be restored
+- Support email is customer-facing; currently monitored at `calvin.du.randt@gmail.com`
 

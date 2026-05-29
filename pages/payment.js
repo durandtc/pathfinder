@@ -38,8 +38,19 @@ export default function Payment() {
         return
       }
 
-      // In live mode, redirect to PayFast
-      window.location.href = data.paymentUrl
+      // In live mode, submit form to PayFast
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = data.paymentUrl
+      Object.entries(data.paymentData || {}).forEach(([key, value]) => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = key
+        input.value = value
+        form.appendChild(input)
+      })
+      document.body.appendChild(form)
+      form.submit()
     } catch (err) {
       setError(err.message)
       setLoading(false)

@@ -1,7 +1,16 @@
 import { supabaseAdmin } from '../../../lib/supabase'
+import crypto from 'crypto'
 
-// Called when Yoco redirects back after a live payment
-// Also handles Yoco webhook notifications
+function verifyPayFastSignature(data, signature, merchantKey) {
+  const str = Object.entries(data)
+    .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&')
+  const expectedSignature = crypto.createHash('md5').update(str + merchantKey).digest('hex')
+  return signature === expectedSignature
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).end()
 
@@ -19,37 +28,86 @@ export default async function handler(req, res) {
       return res.status(200).json({ verified: true, userId: payment.user_id })
     }
 
-    // Try to verify with Yoco using the stored checkout ID
-    const checkoutId = payment.payfast_payment_id
-    if (!checkoutId || checkoutId.startsWith('SANDBOX')) {
+    if (payment.payfast_payment_id?.startsWith('SANDBOX')) {
       return res.status(200).json({ verified: payment.status === 'completed' })
     }
 
-    const yocoRes = await fetch(`https://payments.yoco.com/api/checkouts/${checkoutId}`, {
-      headers: { 'Authorization': `Bearer ${process.env.YOCO_SECRET_KEY}` },
-    })
-
-    if (!yocoRes.ok) return res.status(200).json({ verified: false })
-
-    const yocoData = await yocoRes.json()
-
-    if (yocoData.status === 'successful') {
-      await db.from('payments').update({ status: 'completed', paid_at: new Date().toISOString() }).eq('id', payment_id)
-      await db.from('assessments').insert({ user_id: payment.user_id, payment_id, status: 'not_started' })
-      await db.from('audit_log').insert({ action: 'Yoco payment verified', details: `Payment ${payment_id}`, performed_by: 'system' })
-      return res.status(200).json({ verified: true, userId: payment.user_id })
-    }
-
-    return res.status(200).json({ verified: false, status: yocoData.status })
+    return res.status(200).json({ verified: false })
   }
 
-  // POST: Yoco webhook
-  const { id: checkoutId, status, metadata } = req.body
-  if (status !== 'successful' || !metadata?.payment_id) return res.status(200).end()
+  // POST: PayFast ITN (Instant Transaction Notification) callback
+  const merchantKey = process.env.PAYFAST_MERCHANT_KEY
+  const merchantId = process.env.PAYFAST_MERCHANT_ID
 
-  await db.from('payments').update({ status: 'completed', paid_at: new Date().toISOString() }).eq('id', metadata.payment_id)
-  await db.from('assessments').insert({ user_id: metadata.user_id, payment_id: metadata.payment_id, status: 'not_started' })
-  await db.from('audit_log').insert({ action: 'Yoco webhook received', details: `Payment ${metadata.payment_id}`, performed_by: 'system' })
+  if (!merchantKey || !merchantId) {
+    return res.status(500).json({ error: 'PayFast credentials not configured' })
+  }
+
+  const itnData = req.body
+
+  if (!verifyPayFastSignature(itnData, itnData.signature, merchantKey)) {
+    await db.from('audit_log').insert({
+      action: 'PayFast ITN signature verification failed',
+      details: `Invalid signature for payment ${itnData.m_payment_id}`,
+      performed_by: 'system',
+    })
+    return res.status(200).end()
+  }
+
+  if (itnData.merchant_id !== merchantId) {
+    await db.from('audit_log').insert({
+      action: 'PayFast ITN merchant ID mismatch',
+      details: `Expected ${merchantId}, got ${itnData.merchant_id}`,
+      performed_by: 'system',
+    })
+    return res.status(200).end()
+  }
+
+  const paymentId = itnData.m_payment_id
+  const { data: payment } = await db.from('payments').select('*').eq('id', paymentId).single()
+
+  if (!payment) {
+    await db.from('audit_log').insert({
+      action: 'PayFast ITN payment not found',
+      details: `Payment ${paymentId} not found in database`,
+      performed_by: 'system',
+    })
+    return res.status(200).end()
+  }
+
+  if (itnData.payment_status === 'COMPLETE') {
+    await db.from('payments').update({
+      status: 'completed',
+      paid_at: new Date().toISOString(),
+      payfast_payment_id: itnData.pf_payment_id,
+    }).eq('id', paymentId)
+
+    const { data: existingAssessment } = await db.from('assessments')
+      .select('*')
+      .eq('payment_id', paymentId)
+      .single()
+
+    if (!existingAssessment) {
+      await db.from('assessments').insert({
+        user_id: payment.user_id,
+        payment_id: paymentId,
+        status: 'not_started',
+      })
+    }
+
+    await db.from('audit_log').insert({
+      action: 'PayFast payment completed',
+      details: `Payment ${paymentId} · PF ID ${itnData.pf_payment_id} · R${itnData.amount_gross}`,
+      performed_by: 'system',
+    })
+  } else if (itnData.payment_status === 'FAILED') {
+    await db.from('payments').update({ status: 'failed' }).eq('id', paymentId)
+    await db.from('audit_log').insert({
+      action: 'PayFast payment failed',
+      details: `Payment ${paymentId}`,
+      performed_by: 'system',
+    })
+  }
 
   return res.status(200).end()
 }

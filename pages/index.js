@@ -158,7 +158,7 @@ export default function Home() {
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', margin: 0 }}>
           <Link href="/terms" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginRight: '1rem' }}>Terms of Service</Link>
           <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', marginRight: '1rem' }}>Privacy Policy</Link>
-          <Link href="/admin" style={{ color: 'rgba(255,255,255,0.3)' }}>Admin</Link>
+          <a href="mailto:support@pickmypath.co.za" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Support</a>
         </p>
       </footer>
     </>
