@@ -958,6 +958,36 @@ UPDATE users SET terms_accepted = true WHERE terms_accepted = false;
 
 ---
 
+### PayFast Signature Bug Fixes — May 29, 2026
+
+**Problem**: During live testing, PayFast was rejecting payments with error: "Generated signature does not match submitted signature."
+
+**Root Causes**:
+1. **Inverted sandbox logic** (`pages/api/payment/initiate.js`, line 25):
+   - Code was: `const sandbox = process.env.PAYFAST_SANDBOX !== 'true'`
+   - Meant: If `PAYFAST_SANDBOX=true`, the code treated it as `false` and forced live mode
+   - This caused the code to attempt PayFast live integration when testing with sandbox mode
+
+2. **Merchant key leaked into signature data** (`pages/api/payment/initiate.js`, line 58):
+   - `merchant_key` was included in the `paymentData` object sent to PayFast
+   - The signature algorithm (line 5-10) includes all non-empty object properties in the signature calculation
+   - PayFast rejected the request because `merchant_key` should never be transmitted to PayFast (only used locally to generate the signature)
+
+**Solution**:
+- **Line 25**: Changed logic to `const sandbox = process.env.PAYFAST_SANDBOX === 'true'`
+- **Line 57**: Removed `merchant_key: merchantKey` from `paymentData` object (signature still generated correctly on line 71 with access to merchantKey variable)
+
+**Files Modified**:
+- `pages/api/payment/initiate.js` — Fixed sandbox logic and removed merchant_key from payment data
+
+**Verification**:
+- Push changes to GitHub → Vercel redeploys
+- Test with `PAYFAST_SANDBOX=false` in Vercel env vars
+- Payment form submission should now successfully validate signature at PayFast
+- User will be redirected to PayFast payment page (or sandbox if using sandbox credentials)
+
+---
+
 ### Support Email Footer & Legal Page Contact — May 2026 (final)
 
 **Problem**: Footer had a non-functional "Admin" link that pointed to `/admin` (admin panel never implemented). Users had no obvious way to contact support.
@@ -1002,4 +1032,94 @@ UPDATE users SET terms_accepted = true WHERE terms_accepted = false;
 - Admin panel (`/admin`, `pages/admin/`) and admin environment variables (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) remain in codebase but unused
 - If admin panel is built in future, the `/admin` route can be restored
 - Support email is customer-facing; currently monitored at `calvin.du.randt@gmail.com`
+
+---
+
+### Marketing Flyers — May 2026 (final)
+
+**Purpose**: Print-ready flyers for school distribution, bulletin boards, and parent handouts to drive awareness and direct students to `pickmypath.co.za`.
+
+#### Flyer Versions
+
+**A6 Flyer v4** (`a6-flyer-v4.html`)
+- **Size**: A6 (105mm × 148mm) — pocket-sized postcard
+- **Use cases**: Hand-outs during school visits, inclusion in parent packs, fridge magnets
+- **Layout**: 3-section design (What You Get, Based On, For You) with navy/gold branding
+- **Content highlights**:
+  - Personalized career report with top 3 matches
+  - Day-in-the-life descriptions of careers
+  - Salary ranges & career progression paths
+  - Actionable next steps for exploration
+  - Holland RIASEC framework
+  - Value proposition: confidence, clarity, real guidance
+- **CTA**: "READY TO DISCOVER YOUR PATH?" + website (`pickmypath.co.za`)
+- **Branding**: Gold accent bar top, consistent with website theme (#0f1f3d navy, #d4af37 gold)
+
+**A5 Flyer v5** (`a5-flyer-v5.html`)
+- **Size**: A5 (148mm × 210mm) — half-letter, larger format
+- **Use cases**: Wall posters in school corridors, staff room notices, community centers
+- **Layout**: Identical to v4 but scaled up for better readability at distance
+- **Advantages**: Larger typography, more prominent branding, better visibility from across a room
+
+#### Branding & Design
+
+- **Color scheme**: Navy gradient (#0f1f3d → #1a2a4d) with gold accents (#d4af37)
+- **Typography**: System fonts (-apple-system, BlinkMacSystemFont, Segoe UI, Roboto)
+- **Logo**: PickMyPath brand name in gold (no separate logo image required)
+- **Visual hierarchy**: 
+  - Gold section titles (capitalized, 11px)
+  - White body text (12px) with gold bullet points
+  - Gold website URL in bottom box
+- **Accessibility**: High contrast (white/gold on navy), readable when printed in black & white
+
+#### How to Print
+
+1. **Open in browser**: Double-click `a6-flyer-v4.html` or `a5-flyer-v5.html` to open in default browser
+2. **Print settings**:
+   - Paper size: A6 (105mm × 148mm) or A5 (148mm × 210mm) respectively
+   - Orientation: Portrait
+   - Margins: None (or 0mm)
+   - Scale: 100% (no scaling)
+3. **Batch printing**: 
+   - A6: Can print 4 per A4 page (arrange 2×2)
+   - A5: Prints 2 per A4 page (arrange 1×2)
+4. **Export to PDF**: Use browser's print dialog → "Save as PDF" for digital archiving
+
+#### Integration with School Outreach
+
+- **Before approaching schools**: Print sample flyers to include in initial proposal package
+- **During school visits**: Hand out A6 postcards to students during assemblies or guidance sessions
+- **For staff**: Provide A5 posters for staff rooms and notice boards
+- **For parents**: Include A6 flyers in school newsletters or parent communication packs
+- **Follow-up**: Posters (A5) in school corridors, flyers in library or guidance office
+
+#### Content & Messaging Strategy
+
+**"What You Get"** — Emphasizes tangible outcomes (not generic benefits):
+- Personalized report (not generic assessment)
+- Day-in-the-life descriptions (makes careers tangible for students)
+- Salary ranges & progression (answers parent question: "Will it pay?")
+- Actionable next steps (moves from awareness to action)
+
+**"Based On"** — Builds credibility through methodology:
+- 45-question assessment (substantive, not a quick quiz)
+- Holland RIASEC framework (established, professional approach)
+- Personalized analysis (not template-based)
+
+**"For You"** — Value proposition from student perspective:
+- Confidence in career direction (reduces anxiety, increases commitment)
+- Clarity on subject choices (immediate practical benefit)
+- Real guidance (not generic advice — differentiates from free online tools)
+
+**Website CTA**: No price on flyers; directs to website where full details and pricing are visible. Reduces friction for initial engagement.
+
+#### Files
+- `a6-flyer-v4.html` — A6 pocket-sized flyer
+- `a5-flyer-v5.html` — A5 larger poster flyer
+
+#### No Code Changes Required
+- Flyers are static HTML/CSS, not integrated into Next.js app
+- Entirely separate from website codebase
+- Can be updated independently by editing HTML files
+- Print-friendly CSS ensures quality output
 

@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   const cfg = {}
   cfgRows?.forEach(r => { cfg[r.key_name] = r.plain_value })
 
-  const sandbox     = process.env.PAYFAST_SANDBOX !== 'true'
+  const sandbox     = process.env.PAYFAST_SANDBOX === 'true'
   const merchantId  = process.env.PAYFAST_MERCHANT_ID
   const merchantKey = process.env.PAYFAST_MERCHANT_KEY
   const priceExVat  = parseFloat(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
@@ -55,7 +55,6 @@ export default async function handler(req, res) {
   const payFastUrl = 'https://www.payfast.co.za/eng/process'
   const paymentData = {
     merchant_id: merchantId,
-    merchant_key: merchantKey,
     return_url: `${appUrl}/payment/success?payment_id=${payment.id}`,
     cancel_url: `${appUrl}/payment`,
     notify_url: `${appUrl}/api/payment/verify`,
