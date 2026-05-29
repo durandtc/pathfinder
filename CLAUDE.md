@@ -1140,3 +1140,35 @@ paymentData.signature = generatePayFastSignature(paymentData, merchantKey)
 - Can be updated independently by editing HTML files
 - Print-friendly CSS ensures quality output
 
+---
+
+### PayFast Signature Hash Bug Fix — May 29, 2026 (continued)
+
+**Problem**: After merchant_key was added to paymentData and the sandbox logic was fixed, payments still failed with "400 Bad Request - generated signature does not match submitted signature."
+
+**Root Cause**: The signature hash was incorrectly including `merchant_key` in the string that gets hashed. PayFast's signature verification excludes `merchant_key` from the calculation (it's only appended at the end of the string to hash, not included as a field). When PayFast recalculated the signature on their side, it didn't match because the code was hashing different data.
+
+**Solution**: Updated the `generatePayFastSignature()` function in `pages/api/payment/initiate.js` to exclude both `merchant_key` and `signature` fields from the hash calculation, matching PayFast's expected behavior.
+
+**Changed Code** (`pages/api/payment/initiate.js`, lines 4–11):
+```javascript
+function generatePayFastSignature(data, merchantKey) {
+  const str = Object.entries(data)
+    .filter(([k, v]) => k !== 'merchant_key' && k !== 'signature' && v !== null && v !== undefined && v !== '')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&')
+  return crypto.createHash('md5').update(str + merchantKey).digest('hex')
+}
+```
+
+**Key Change**: Added `k !== 'merchant_key' &&` to the filter to exclude merchant_key from the hash string.
+
+**Files Modified**:
+- `pages/api/payment/initiate.js` — Fixed signature generation to exclude merchant_key
+
+**Verification**:
+- Push changes to GitHub → Vercel redeploys
+- Try another payment — should redirect to PayFast payment page without signature error
+- Payment should complete successfully
+

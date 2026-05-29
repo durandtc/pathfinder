@@ -3,7 +3,7 @@ import crypto from 'crypto'
 
 function generatePayFastSignature(data, merchantKey) {
   const str = Object.entries(data)
-    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .filter(([k, v]) => k !== 'merchant_key' && k !== 'signature' && v !== null && v !== undefined && v !== '')
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
     .join('&')
