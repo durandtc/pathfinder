@@ -5,9 +5,9 @@ function generatePayFastSignature(data, passphrase = null) {
   const str = Object.entries(data)
     .filter(([k, v]) => k !== 'signature' && k !== 'merchant_key' && v !== null && v !== undefined && v !== '')
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+    .map(([k, v]) => `${k}=${String(v)}`)
     .join('&')
-  const hashStr = passphrase ? `${str}&passphrase=${encodeURIComponent(passphrase)}` : str
+  const hashStr = passphrase ? `${str}&passphrase=${passphrase}` : str
   console.log('[PayFast] Hashing string:', hashStr)
   return crypto.createHash('md5').update(hashStr).digest('hex')
 }
