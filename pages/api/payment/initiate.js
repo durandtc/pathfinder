@@ -73,6 +73,13 @@ export default async function handler(req, res) {
   const passphrase = process.env.PAYFAST_PASSPHRASE || null
   paymentData.signature = generatePayFastSignature(paymentData, passphrase)
 
+  console.log('[PayFast Initiate] Signature Debug:')
+  console.log('  passphrase_set:', !!passphrase)
+  console.log('  passphrase_length:', passphrase?.length || 0)
+  console.log('  merchant_id:', merchantId)
+  console.log('  generated_signature:', paymentData.signature)
+  console.log('  payment_data_keys:', Object.keys(paymentData).sort())
+
   await db.from('payments').update({ payfast_payment_id: 'PENDING' }).eq('id', payment.id)
   return res.status(200).json({ sandbox: false, paymentUrl: payFastUrl, paymentData })
 }
