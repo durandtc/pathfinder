@@ -17,7 +17,7 @@ export default function PaymentSuccess() {
     const delay = 3000 // 3s between retries = up to 18s total
 
     function checkPayment() {
-      fetch(`/api/payment/verify?payment_id=${payment_id}`)
+      fetch(`/api/payment/verify?payment_id=${payment_id}`, { cache: 'no-store' })
         .then(r => r.json())
         .then(d => {
           if (d.verified) {

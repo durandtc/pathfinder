@@ -23,6 +23,8 @@ export default async function handler(req, res) {
     const { payment_id } = req.query
     if (!payment_id) return res.status(400).json({ error: 'payment_id required' })
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+
     const { data: payment } = await db.from('payments').select('*').eq('id', payment_id).single()
     if (!payment) return res.status(404).json({ error: 'Payment not found' })
 

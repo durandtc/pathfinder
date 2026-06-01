@@ -1376,3 +1376,42 @@ SELECT * FROM audit_log WHERE action = 'PayFast ITN signature verification faile
 | No audit_log entry at all for failed payment | ITN never reached the server | Check PayFast ITN URL setting; check `NEXT_PUBLIC_APP_URL` in Vercel |
 | audit_log shows "PayFast payment completed" but user can't access assessment | Assessment row not created | Run manual SQL fix (see previous section) |
 
+---
+
+### PayFast ITN: Missing Passphrase & 304 Caching Bug — June 1, 2026
+
+**Problem**: Live payments completed on PayFast but database stayed `pending`. Success page showed "Payment not yet confirmed" and retried 6 times before giving up.
+
+**Root Cause 1 — Missing `PAYFAST_PASSPHRASE`**:
+- Audit log showed `passphrase_set=false` with signature mismatch: `received` ≠ `computed`
+- PayFast signs its ITN callbacks using the account passphrase (set in PayFast merchant account → Settings → Integration)
+- `PAYFAST_PASSPHRASE` was not set in Vercel, so our ITN handler computed the hash without the passphrase while PayFast's hash included it — always a mismatch
+- **Fix**: Add `PAYFAST_PASSPHRASE` environment variable to Vercel matching the exact passphrase in PayFast merchant account settings
+
+**Root Cause 2 — 304 Caching on GET `/api/payment/verify`**:
+- The success page retry loop polls `GET /api/payment/verify?payment_id=X` up to 6 times
+- The GET handler returned no `Cache-Control` header, so Next.js auto-added an `ETag`
+- The browser sent conditional requests (`If-None-Match`), got `304 Not Modified`, and used the cached `{verified: false}` response for every retry
+- Even if the ITN had updated the DB, the success page would never see it
+- **Fix**: Added `res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')` to the GET handler, and `cache: 'no-store'` to the `fetch()` call in the success page
+
+#### How to Diagnose Future Signature Failures
+
+Query audit_log immediately after a failed payment:
+```sql
+SELECT action, details, created_at
+FROM audit_log
+WHERE created_at > now() - interval '2 hours'
+ORDER BY created_at DESC LIMIT 20;
+```
+- `passphrase_set=false` → `PAYFAST_PASSPHRASE` missing from Vercel env vars
+- `passphrase_set=true`, still mismatch → passphrase value doesn't match PayFast account exactly (check for extra whitespace)
+- No ITN entry at all → ITN never reached server (check `NEXT_PUBLIC_APP_URL` and PayFast ITN URL config)
+
+#### Files Modified
+- `pages/api/payment/verify.js` — Added `Cache-Control: no-store` header to GET handler
+- `pages/payment/success.js` — Added `cache: 'no-store'` to fetch() call
+
+#### Environment Variable Required
+- `PAYFAST_PASSPHRASE` — Copy exact value from PayFast merchant account → Settings → Integration → Passphrase field. If PayFast has no passphrase set, omit this env var entirely (leave blank = no passphrase in hash).
+
