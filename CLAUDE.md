@@ -1326,3 +1326,53 @@ AND NOT EXISTS (SELECT 1 FROM assessments WHERE payment_id = payments.id);
 3. Check Supabase `audit_log` for "PayFast payment completed" entry
 4. Check `payments` table: `status = 'completed'` and `payfast_payment_id` populated with real PF payment ID
 
+---
+
+### PayFast ITN Diagnostic Logging & Success Page Retry — June 1, 2026
+
+**Problem**: After the ITN signature fix was deployed, a live payment still showed "Payment not yet confirmed" on the success page. Vercel logs confirmed the ITN POST (PayFast server-to-server) arrived and returned 200, but the database was not updated — meaning signature verification was silently failing again.
+
+**Log Pattern to Recognise**:
+```
+POST 200  /api/payment/initiate   ← user initiates
+POST 200  /api/payment/verify     ← PayFast ITN callback (server-to-server)
+GET  200  /api/payment/verify     ← success page JS checking DB status
+```
+The GET is NOT a PayFast request — it comes from the browser on `/payment/success?payment_id=X`. It is correct and expected. If it returns `verified: false`, the ITN POST did not update the database.
+
+#### Fix 1 — Diagnostic Logging in ITN Handler (`pages/api/payment/verify.js`)
+
+When signature verification fails, the audit_log entry now includes:
+- `received=<hash>` — the signature PayFast sent
+- `computed=<hash>` — the hash our code calculated
+- `passphrase_set=true/false` — whether `PAYFAST_PASSPHRASE` env var is configured
+- `fields=<list>` — which fields were present in the ITN body
+
+**How to diagnose**: After a failed payment, query Supabase audit_log:
+```sql
+SELECT * FROM audit_log WHERE action = 'PayFast ITN signature verification failed' ORDER BY created_at DESC LIMIT 5;
+```
+- If `received` ≠ `computed` and `passphrase_set=false` but PayFast has a passphrase configured → set `PAYFAST_PASSPHRASE` in Vercel
+- If fields look wrong or truncated → body parsing issue
+
+#### Fix 2 — Retry Polling on Success Page (`pages/payment/success.js`)
+
+**Problem**: PayFast sometimes redirects the user back to the site milliseconds before the ITN arrives. The success page checked once, found `pending`, and immediately showed "Payment not yet confirmed".
+
+**Solution**: Replaced single fetch with a retry loop — up to 6 attempts, 3 seconds apart (18 seconds total). Shows "Verifying your payment..." while retrying. Only shows the "not confirmed" error after all retries are exhausted.
+
+**User experience**: If ITN arrives within 18 seconds (normal), user sees "Payment confirmed!" automatically without needing to refresh.
+
+#### Files Modified
+- `pages/api/payment/verify.js` — Added detailed audit_log entry on signature mismatch (received vs computed hash, passphrase_set flag, field list)
+- `pages/payment/success.js` — Replaced single-shot fetch with retry loop (6 × 3s = 18s window)
+
+#### Key Debugging Reference
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| audit_log: `passphrase_set=false`, received ≠ computed | `PAYFAST_PASSPHRASE` not set in Vercel | Add env var matching PayFast merchant account passphrase |
+| audit_log: `passphrase_set=true`, received ≠ computed | Passphrase value mismatch | Verify exact passphrase in PayFast → Settings → Integration |
+| No audit_log entry at all for failed payment | ITN never reached the server | Check PayFast ITN URL setting; check `NEXT_PUBLIC_APP_URL` in Vercel |
+| audit_log shows "PayFast payment completed" but user can't access assessment | Assessment row not created | Run manual SQL fix (see previous section) |
+

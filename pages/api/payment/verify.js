@@ -48,9 +48,19 @@ export default async function handler(req, res) {
   const itnData = req.body
 
   if (!verifyPayFastSignature(itnData, itnData.signature)) {
+    // Log the computed signature vs received for diagnosis
+    const passphrase = process.env.PAYFAST_PASSPHRASE || null
+    const debugStr = Object.entries(itnData)
+      .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
+      .join('&')
+    const debugHashStr = passphrase ? `${debugStr}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : debugStr
+    const crypto2 = require('crypto')
+    const computedSig = crypto2.createHash('md5').update(debugHashStr).digest('hex')
     await db.from('audit_log').insert({
       action: 'PayFast ITN signature verification failed',
-      details: `Invalid signature for payment ${itnData.m_payment_id}`,
+      details: `Payment ${itnData.m_payment_id} | received=${itnData.signature} | computed=${computedSig} | passphrase_set=${!!passphrase} | fields=${Object.keys(itnData).join(',')}`,
       performed_by: 'system',
     })
     return res.status(200).end()

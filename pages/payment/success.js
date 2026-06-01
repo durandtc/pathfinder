@@ -12,10 +12,30 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     if (!payment_id) { setVerifying(false); setVerified(true); return } // sandbox
-    fetch(`/api/payment/verify?payment_id=${payment_id}`)
-      .then(r => r.json())
-      .then(d => { setVerified(d.verified); setVerifying(false) })
-      .catch(() => { setVerified(false); setVerifying(false) })
+    let attempts = 0
+    const maxAttempts = 6
+    const delay = 3000 // 3s between retries = up to 18s total
+
+    function checkPayment() {
+      fetch(`/api/payment/verify?payment_id=${payment_id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.verified) {
+            setVerified(true)
+            setVerifying(false)
+          } else if (++attempts < maxAttempts) {
+            setTimeout(checkPayment, delay)
+          } else {
+            setVerified(false)
+            setVerifying(false)
+          }
+        })
+        .catch(() => {
+          if (++attempts < maxAttempts) setTimeout(checkPayment, delay)
+          else { setVerified(false); setVerifying(false) }
+        })
+    }
+    checkPayment()
   }, [payment_id])
 
   return (
