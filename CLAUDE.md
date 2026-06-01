@@ -204,7 +204,7 @@ export default async function handler(req, res) {
 - **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - **Anthropic AI**: `ANTHROPIC_API_KEY` and `AI_MODEL` (claude-sonnet-4-6 for production)
 - **JWT Auth**: `JWT_SECRET` (must be a 32-byte hex string)
-- **App URL**: `NEXT_PUBLIC_APP_URL` — The live domain (e.g., `https://pickmypath.co.za`) — used for email verification links and password reset URLs
+- **App URL**: `NEXT_PUBLIC_APP_URL` — **CRITICAL: Required for PayFast payment callbacks to work.** Set to the exact domain users access (e.g., `https://www.pickmypath.co.za`). Without this, PayFast ITN callbacks fail silently and payments never complete. Also used for email verification links and password reset URLs.
 - **Admin Credentials**: `ADMIN_EMAIL`, `ADMIN_PASSWORD`
 - **Firebase & Google OAuth**:
   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` — Firebase project ID (e.g., `pathfinder-55a19`)
@@ -1233,4 +1233,96 @@ paymentData.signature = generatePayFastSignature(paymentData, passphrase)
 
 **Files Modified**:
 - `pages/payment.js` — Made sandbox testing banner conditional on API response
+
+---
+
+### Critical Fix: Missing NEXT_PUBLIC_APP_URL Environment Variable — June 1, 2026
+
+**Problem**: PayFast ITN (Instant Transaction Notification) callbacks were failing silently. After a user completed payment on PayFast, they were redirected back to the site with a "Payment not yet confirmed" message. The payment record was created but never marked as completed, blocking access to the assessment.
+
+**Root Cause**: The `NEXT_PUBLIC_APP_URL` environment variable was not set in Vercel. In `pages/api/payment/initiate.js` line 32:
+```javascript
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://yourdomain.co.za'
+```
+
+Without the env var, the fallback default `'https://yourdomain.co.za'` was being used. This caused the ITN callback URL to be sent to PayFast as `https://yourdomain.co.za/api/payment/verify` — a non-existent domain. PayFast tried to POST the payment confirmation to that domain, failed, and gave up silently.
+
+**Solution**: Add `NEXT_PUBLIC_APP_URL` to Vercel environment variables:
+1. Go to **Vercel Dashboard** → **Settings** → **Environment Variables**
+2. Add a new variable:
+   - **Name**: `NEXT_PUBLIC_APP_URL`
+   - **Value**: `https://www.pickmypath.co.za` (must match the exact domain users access)
+   - **Environment**: Production (or all environments if desired)
+3. Save and redeploy
+
+**Why This Matters**:
+- The ITN callback URL must be reachable by PayFast's servers
+- The domain must match exactly what the user accesses (if they use `www.pickmypath.co.za`, the callback URL must also use `www`, not just `pickmypath.co.za`)
+- Without this, all PayFast callbacks fail silently and payments never complete
+
+**Verification**:
+1. After setting the env var and redeploying, initiate a new payment
+2. Complete payment on PayFast
+3. You should be redirected back and see "Payment successful" immediately (or after a few seconds as the ITN callback processes)
+4. Check Supabase `audit_log` table for "PayFast payment completed" entry
+5. Check `payments` table to confirm `status = 'completed'` and `payfast_payment_id` is set (not NULL)
+6. User should now have access to the assessment
+
+**Files Modified**: None (configuration only — environment variable in Vercel)
+
+**Related Files**:
+- `pages/api/payment/initiate.js` — Uses `NEXT_PUBLIC_APP_URL` to construct the notify_url sent to PayFast
+- `pages/payment.js` — Frontend payment page that redirects to PayFast
+
+---
+
+### PayFast ITN Signature Verification Bug Fix — June 1, 2026
+
+**Problem**: Even after setting `NEXT_PUBLIC_APP_URL` and deploying, payments received by PayFast still never completed in the database. The ITN callback was reaching the server but the payment remained `pending`.
+
+**Root Cause**: Two bugs in `verifyPayFastSignature()` inside `pages/api/payment/verify.js` caused every incoming ITN to fail signature validation silently:
+
+1. **Wrong URL encoding** — The function used `encodeURIComponent(v)` which encodes spaces as `%20`. PayFast's backend uses PHP's `urlencode()` which encodes spaces as `+`. Fields like `item_name` ("PickMyPath Career Assessment") contain spaces, so the computed hash never matched PayFast's hash.
+
+2. **Wrong passphrase handling** — The function appended `merchantKey` directly to the hash string (`str + merchantKey`). PayFast's algorithm appends a separate account-level passphrase as `&passphrase=VALUE` (from `PAYFAST_PASSPHRASE` env var). Using the wrong value produced a completely different hash.
+
+Because signature verification failed, the function returned a 200 (required by PayFast) but never updated the payment status — silently keeping every payment as `pending`.
+
+**Solution**: Rewrote `verifyPayFastSignature()` to match the same algorithm used by `generatePayFastSignature()` in `initiate.js` and by PayFast's own backend:
+
+```javascript
+function verifyPayFastSignature(data, signature) {
+  const passphrase = process.env.PAYFAST_PASSPHRASE || null
+  const str = Object.entries(data)
+    .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
+    .join('&')
+  const hashStr = passphrase ? `${str}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : str
+  const expectedSignature = crypto.createHash('md5').update(hashStr).digest('hex')
+  return signature === expectedSignature
+}
+```
+
+Also removed the now-unused `merchantKey` argument from the call site.
+
+**Files Modified**:
+- `pages/api/payment/verify.js` — Fixed `verifyPayFastSignature()`: PHP-compatible encoding (`%20` → `+`), passphrase from `PAYFAST_PASSPHRASE` env var, removed merchantKey argument
+
+**Recovering stuck payments**: Any payments that were received by PayFast but stayed `pending` due to this bug must be manually completed in Supabase SQL Editor:
+```sql
+UPDATE payments SET status = 'completed', paid_at = now(), payfast_payment_id = 'MANUAL-FIX-01'
+WHERE status = 'pending' AND user_id = '<user-id>';
+
+INSERT INTO assessments (user_id, payment_id, status)
+SELECT user_id, id, 'not_started' FROM payments
+WHERE user_id = '<user-id>' AND status = 'completed'
+AND NOT EXISTS (SELECT 1 FROM assessments WHERE payment_id = payments.id);
+```
+
+**Verification**:
+1. Push fix to GitHub → Vercel redeploys
+2. Initiate a new payment and complete it on PayFast
+3. Check Supabase `audit_log` for "PayFast payment completed" entry
+4. Check `payments` table: `status = 'completed'` and `payfast_payment_id` populated with real PF payment ID
 

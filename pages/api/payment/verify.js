@@ -1,13 +1,15 @@
 import { supabaseAdmin } from '../../../lib/supabase'
 import crypto from 'crypto'
 
-function verifyPayFastSignature(data, signature, merchantKey) {
+function verifyPayFastSignature(data, signature) {
+  const passphrase = process.env.PAYFAST_PASSPHRASE || null
   const str = Object.entries(data)
     .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
     .join('&')
-  const expectedSignature = crypto.createHash('md5').update(str + merchantKey).digest('hex')
+  const hashStr = passphrase ? `${str}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : str
+  const expectedSignature = crypto.createHash('md5').update(hashStr).digest('hex')
   return signature === expectedSignature
 }
 
@@ -45,7 +47,7 @@ export default async function handler(req, res) {
 
   const itnData = req.body
 
-  if (!verifyPayFastSignature(itnData, itnData.signature, merchantKey)) {
+  if (!verifyPayFastSignature(itnData, itnData.signature)) {
     await db.from('audit_log').insert({
       action: 'PayFast ITN signature verification failed',
       details: `Invalid signature for payment ${itnData.m_payment_id}`,
