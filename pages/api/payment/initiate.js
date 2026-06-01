@@ -8,6 +8,7 @@ function generatePayFastSignature(data, passphrase = null) {
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
     .join('&')
   const hashStr = passphrase ? `${str}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : str
+  console.log('[PayFast] Hashing string:', hashStr)
   return crypto.createHash('md5').update(hashStr).digest('hex')
 }
 
