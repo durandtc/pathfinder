@@ -1415,3 +1415,77 @@ ORDER BY created_at DESC LIMIT 20;
 #### Environment Variable Required
 - `PAYFAST_PASSPHRASE` — Copy exact value from PayFast merchant account → Settings → Integration → Passphrase field. If PayFast has no passphrase set, omit this env var entirely (leave blank = no passphrase in hash).
 
+---
+
+### PayFast Signature Field Order Bug — RESOLVED June 2, 2026
+
+**Status**: RESOLVED
+
+**Problem**: Persistent "400 Bad Request - Generated signature does not match submitted signature" on every live payment attempt. All previous fixes (merchant_key inclusion/exclusion, URL encoding variations, passphrase handling) failed because the underlying cause was never identified.
+
+**Root Cause — Field ordering**: The PayFast integration documentation (page 6) explicitly states:
+
+> *"Variable order: The pairs must be listed in the order in which they appear in the attributes description."*
+> *"Do not use the API signature format, which uses alphabetical ordering!"*
+
+Both `initiate.js` and `verify.js` had `.sort(([a], [b]) => a.localeCompare(b))` — **alphabetical ordering**. This is exactly what PayFast forbids for form-based payments. Every single previous fix attempt failed because the field order was always wrong, regardless of what else was changed.
+
+The PHP reference implementation in the official docs simply iterates the data object in insertion order (no sort). Our `paymentData` object was already defined in the correct documented order (merchant details → customer details → transaction details), so only the sort needed to be removed.
+
+**Secondary fixes applied at the same time**:
+1. **Removed `merchant_key` exclusion** — `merchant_key` must be included in the hash (the PHP reference iterates all fields)
+2. **URL encoding** — `encodeURIComponent(String(v).trim()).replace(/%20/g, '+')` to match PHP's `urlencode()` (spaces as `+`)
+3. **Passphrase URL encoding** — passphrase now also encoded the same way before appending
+
+**Correct field order in `paymentData`** (must match this exactly):
+1. merchant_id
+2. merchant_key
+3. return_url
+4. cancel_url
+5. notify_url
+6. name_first
+7. name_last
+8. email_address
+9. m_payment_id
+10. amount
+11. item_name
+12. item_description
+13. custom_str1
+
+**Final signature function** (`pages/api/payment/initiate.js`):
+```javascript
+function generatePayFastSignature(data, passphrase = null) {
+  // PayFast requires fields in INSERTION ORDER — alphabetical ordering causes signature mismatch
+  // See PayFast docs: "Do not use the API signature format, which uses alphabetical ordering!"
+  const str = Object.entries(data)
+    .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v).trim()).replace(/%20/g, '+')}`)
+    .join('&')
+  const hashStr = passphrase
+    ? `${str}&passphrase=${encodeURIComponent(String(passphrase).trim()).replace(/%20/g, '+')}`
+    : str
+  return crypto.createHash('md5').update(hashStr).digest('hex')
+}
+```
+
+**Final ITN verify function** (`pages/api/payment/verify.js`):
+```javascript
+function verifyPayFastSignature(data, signature) {
+  const passphrase = process.env.PAYFAST_PASSPHRASE || null
+  // PayFast ITN fields must be processed in RECEIVED ORDER (not alphabetical)
+  const str = Object.entries(data)
+    .filter(([k]) => k !== 'signature')
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
+    .join('&')
+  const hashStr = passphrase
+    ? `${str}&passphrase=${encodeURIComponent(String(passphrase).trim()).replace(/%20/g, '+')}`
+    : str
+  const expectedSignature = crypto.createHash('md5').update(hashStr).digest('hex')
+  return signature === expectedSignature
+}
+```
+
+**Files Modified**:
+- `pages/api/payment/initiate.js` — Removed `.sort()`, removed `merchant_key` exclusion, added proper URL encoding
+- `pages/api/payment/verify.js` — Removed `.sort()`, fixed encoding, updated debug log block to match
+

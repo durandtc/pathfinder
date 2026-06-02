@@ -2,12 +2,15 @@ import { supabaseAdmin } from '../../../lib/supabase'
 import crypto from 'crypto'
 
 function generatePayFastSignature(data, passphrase = null) {
+  // PayFast requires fields in INSERTION ORDER — alphabetical ordering causes signature mismatch
+  // See PayFast docs: "Do not use the API signature format, which uses alphabetical ordering!"
   const str = Object.entries(data)
-    .filter(([k, v]) => k !== 'signature' && k !== 'merchant_key' && v !== null && v !== undefined && v !== '')
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${String(v)}`)
+    .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v).trim()).replace(/%20/g, '+')}`)
     .join('&')
-  const hashStr = passphrase ? `${str}&passphrase=${passphrase}` : str
+  const hashStr = passphrase
+    ? `${str}&passphrase=${encodeURIComponent(String(passphrase).trim()).replace(/%20/g, '+')}`
+    : str
   console.log('[PayFast] Hashing string:', hashStr)
   return crypto.createHash('md5').update(hashStr).digest('hex')
 }
@@ -77,6 +80,8 @@ export default async function handler(req, res) {
   console.log('[PayFast Initiate] Signature Debug:')
   console.log('  passphrase_set:', !!passphrase)
   console.log('  passphrase_length:', passphrase?.length || 0)
+  console.log('  passphrase_value:', passphrase ? `"${passphrase}"` : 'null')
+  console.log('  passphrase_bytes:', passphrase ? [...passphrase].map(c => c.charCodeAt(0)) : 'null')
   console.log('  merchant_id:', merchantId)
   console.log('  generated_signature:', paymentData.signature)
   console.log('  payment_data_keys:', Object.keys(paymentData).sort())

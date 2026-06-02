@@ -3,12 +3,15 @@ import crypto from 'crypto'
 
 function verifyPayFastSignature(data, signature) {
   const passphrase = process.env.PAYFAST_PASSPHRASE || null
+  // PayFast ITN fields must be processed in RECEIVED ORDER (not alphabetical)
+  // PayFast always sends 'signature' last, so we stop before it
   const str = Object.entries(data)
-    .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
-    .sort(([a], [b]) => a.localeCompare(b))
+    .filter(([k]) => k !== 'signature')
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
     .join('&')
-  const hashStr = passphrase ? `${str}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : str
+  const hashStr = passphrase
+    ? `${str}&passphrase=${encodeURIComponent(String(passphrase).trim()).replace(/%20/g, '+')}`
+    : str
   const expectedSignature = crypto.createHash('md5').update(hashStr).digest('hex')
   return signature === expectedSignature
 }
@@ -53,11 +56,10 @@ export default async function handler(req, res) {
     // Log the computed signature vs received for diagnosis
     const passphrase = process.env.PAYFAST_PASSPHRASE || null
     const debugStr = Object.entries(itnData)
-      .filter(([k, v]) => k !== 'signature' && v !== null && v !== undefined && v !== '')
-      .sort(([a], [b]) => a.localeCompare(b))
+      .filter(([k]) => k !== 'signature')
       .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
       .join('&')
-    const debugHashStr = passphrase ? `${debugStr}&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}` : debugStr
+    const debugHashStr = passphrase ? `${debugStr}&passphrase=${encodeURIComponent(String(passphrase).trim()).replace(/%20/g, '+')}` : debugStr
     const crypto2 = require('crypto')
     const computedSig = crypto2.createHash('md5').update(debugHashStr).digest('hex')
     await db.from('audit_log').insert({
