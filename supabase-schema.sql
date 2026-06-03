@@ -128,3 +128,8 @@ alter table users add column if not exists terms_accepted boolean default false;
 alter table users add column if not exists terms_accepted_at timestamptz;
 -- For existing users, mark as having accepted terms (they were using the service)
 update users set terms_accepted = true where terms_accepted = false;
+
+-- ── MIGRATION: Add report rating columns ────
+alter table reports add column if not exists rating integer check (rating >= 1 and rating <= 5);
+alter table reports add column if not exists rating_comment text;
+alter table reports add column if not exists rated_at timestamptz;

@@ -1,9 +1,18 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import Nav from '../components/Nav'
 
 export default function Home() {
   const price = process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399'
+  const [ratings, setRatings] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/assessment/ratings-summary')
+      .then(r => r.json())
+      .then(d => { if (d.totalRatings > 0) setRatings(d) })
+      .catch(() => {})
+  }, [])
 
   return (
     <>
@@ -150,6 +159,40 @@ export default function Home() {
           <p style={{ fontSize: '0.75rem', color: 'var(--text-mid)', margin: 0 }}>45 minutes from payment to clarity</p>
         </div>
       </section>
+
+      {/* RATINGS — only renders when there are real ratings */}
+      {ratings && (
+        <section style={{ padding: '5rem 2rem', background: 'var(--white)' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', marginBottom: '0.75rem' }}>What families say</div>
+            <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(1.8rem,4vw,2.4rem)', color: 'var(--navy)', marginBottom: '0.5rem' }}>Rated by real students</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', margin: '1.25rem 0 0.5rem' }}>
+              <span style={{ fontFamily: 'Georgia,serif', fontSize: '3rem', fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>{ratings.avgRating}</span>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ color: '#d4af37', fontSize: '1.4rem', letterSpacing: 2, lineHeight: 1 }}>
+                  {'★'.repeat(Math.round(ratings.avgRating))}{'☆'.repeat(5 - Math.round(ratings.avgRating))}
+                </div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-mid)', fontWeight: 300, marginTop: 4 }}>
+                  from {ratings.totalRatings} completed assessment{ratings.totalRatings !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
+
+            {ratings.recentComments?.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginTop: '2.5rem', textAlign: 'left' }}>
+                {ratings.recentComments.map((c, i) => (
+                  <div key={i} style={{ background: 'var(--cream-mid)', borderRadius: 12, padding: '1.5rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+                    <div style={{ color: '#d4af37', fontSize: '1rem', marginBottom: '0.75rem', letterSpacing: 1 }}>
+                      {'★'.repeat(c.rating)}{'☆'.repeat(5 - c.rating)}
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.65, fontWeight: 300, margin: 0, fontStyle: 'italic' }}>"{c.comment}"</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '2rem', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>

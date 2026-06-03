@@ -94,11 +94,26 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState('')
 
+  const [selectedRating, setSelectedRating]   = useState(0)
+  const [hoveredRating, setHoveredRating]     = useState(0)
+  const [ratingComment, setRatingComment]     = useState('')
+  const [ratingDone, setRatingDone]           = useState(false)
+  const [ratingSubmitting, setRatingSubmitting] = useState(false)
+  const [ratingError, setRatingError]         = useState('')
+
   useEffect(() => {
     const u = localStorage.getItem('pmp_user')
     if (u) setUser(JSON.parse(u))
     if (id) fetchReport()
   }, [id])
+
+  useEffect(() => {
+    if (report?.rating) {
+      setSelectedRating(report.rating)
+      setRatingComment(report.rating_comment || '')
+      setRatingDone(true)
+    }
+  }, [report])
 
   async function fetchReport() {
     try {
@@ -109,6 +124,25 @@ export default function ReportPage() {
       setStudentName(data.studentName)
     } catch (err) { setError(err.message) }
     setLoading(false)
+  }
+
+  async function submitRating() {
+    if (!selectedRating || !user) return
+    setRatingSubmitting(true)
+    setRatingError('')
+    try {
+      const res = await fetch('/api/assessment/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId: id, userId: user.id, rating: selectedRating, comment: ratingComment }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to submit')
+      setRatingDone(true)
+    } catch (err) {
+      setRatingError(err.message)
+    }
+    setRatingSubmitting(false)
   }
 
   if (loading) return (<><Nav /><div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--text-mid)' }}>Loading your report...</p></div></>)
@@ -361,6 +395,57 @@ export default function ReportPage() {
           <Link href="/dashboard" style={{ flex: 1, minWidth: 140, padding: '12px', background: 'transparent', color: 'var(--navy)', border: '1.5px solid var(--navy)', borderRadius: 8, cursor: 'pointer', fontSize: '0.95rem', textDecoration: 'none', textAlign: 'center' }}>
             ← Back to Dashboard
           </Link>
+        </div>
+
+        {/* Rating section — hidden on print */}
+        <div className="action-buttons" style={{ background: '#fffbeb', borderRadius: 12, padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #fde68a' }}>
+          {ratingDone ? (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>
+                {[1,2,3,4,5].map(s => (
+                  <span key={s} style={{ color: s <= selectedRating ? '#d4af37' : '#ddd', marginRight: 2 }}>★</span>
+                ))}
+              </div>
+              <p style={{ color: 'var(--navy)', fontWeight: 500, margin: '0 0 0.25rem' }}>Thank you for your feedback!</p>
+              <p style={{ color: 'var(--text-mid)', fontSize: '0.8rem', margin: 0, fontWeight: 300 }}>Your rating helps us improve PickMyPath for future students.</p>
+            </div>
+          ) : (
+            <>
+              <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', fontSize: '1.05rem', margin: '0 0 0.35rem' }}>How was your report?</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-mid)', margin: '0 0 1rem', fontWeight: 300 }}>Your feedback helps us improve PickMyPath for future students.</p>
+              <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem' }}>
+                {[1,2,3,4,5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setSelectedRating(star)}
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '2rem', padding: '0 2px', color: star <= (hoveredRating || selectedRating) ? '#d4af37' : '#ccc', transition: 'color 0.1s' }}
+                    aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                  >★</button>
+                ))}
+              </div>
+              {selectedRating > 0 && (
+                <>
+                  <textarea
+                    value={ratingComment}
+                    onChange={e => setRatingComment(e.target.value)}
+                    placeholder="Any comments? (optional)"
+                    rows={3}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box', marginBottom: '0.75rem', color: 'var(--text-dark)', background: '#fff' }}
+                  />
+                  <button
+                    onClick={submitRating}
+                    disabled={ratingSubmitting}
+                    style={{ background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', cursor: ratingSubmitting ? 'default' : 'pointer', fontSize: '0.875rem', fontWeight: 500, opacity: ratingSubmitting ? 0.7 : 1 }}
+                  >
+                    {ratingSubmitting ? 'Submitting…' : 'Submit Feedback'}
+                  </button>
+                  {ratingError && <p style={{ color: '#a32d2d', fontSize: '0.8rem', marginTop: '0.5rem', margin: '0.5rem 0 0' }}>{ratingError}</p>}
+                </>
+              )}
+            </>
+          )}
         </div>
 
         <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', textAlign: 'center', marginTop: '1rem' }}>

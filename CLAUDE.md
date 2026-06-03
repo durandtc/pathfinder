@@ -1489,3 +1489,121 @@ function verifyPayFastSignature(data, signature) {
 - `pages/api/payment/initiate.js` — Removed `.sort()`, removed `merchant_key` exclusion, added proper URL encoding
 - `pages/api/payment/verify.js` — Removed `.sort()`, fixed encoding, updated debug log block to match
 
+---
+
+## Recent Updates (June 2026)
+
+### Report Rating System
+
+**Purpose**: Allow users to rate their career report 1–5 stars and leave an optional comment. Provides social proof for school outreach and a quality feedback loop for AI report improvements.
+
+#### Database Migration
+
+Run in Supabase SQL Editor before deploying:
+```sql
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS rating integer CHECK (rating >= 1 AND rating <= 5);
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS rating_comment text;
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS rated_at timestamptz;
+```
+Also added to `supabase-schema.sql` for future reference.
+
+#### New API Endpoint
+
+**`POST /api/assessment/rate`** (`pages/api/assessment/rate.js`):
+- Body: `{ reportId, userId, rating (1–5), comment (optional string) }`
+- Verifies the report belongs to the userId before updating (prevents rating others' reports)
+- Updates `reports` table: `rating`, `rating_comment`, `rated_at`
+- Returns `{ success: true }`
+
+#### Report Page Changes (`pages/report/[id].js`)
+
+**New state variables**:
+- `selectedRating` — star the user clicked (0 = nothing selected)
+- `hoveredRating` — star being hovered (for hover highlight effect)
+- `ratingComment` — textarea value
+- `ratingDone` — true if already rated (loaded from DB) or just submitted
+- `ratingSubmitting`, `ratingError` — loading/error state
+
+**New `useEffect`**: Initialises rating state from `report.rating` when report loads (handles returning users who already rated).
+
+**New `submitRating()` function**: POSTs to `/api/assessment/rate`, sets `ratingDone = true` on success.
+
+**Rating UI**: Appears at the bottom of the report page, after the action buttons, inside a `className="action-buttons"` container (so it's hidden on print/PDF). Warm yellow background (`#fffbeb`). Two states:
+- **Unrated**: Interactive 5-star buttons with hover effect + optional textarea + "Submit Feedback" button
+- **Rated**: "Thank you for your feedback!" message with read-only stars displayed
+
+#### Viewing Ratings
+
+To see aggregate ratings in Supabase:
+```sql
+SELECT AVG(rating) as avg_rating, COUNT(*) as total_ratings FROM reports WHERE rating IS NOT NULL;
+```
+
+To see all rated reports with comments:
+```sql
+SELECT r.id, u.email, r.rating, r.rating_comment, r.rated_at FROM reports r JOIN users u ON r.user_id = u.id WHERE r.rating IS NOT NULL ORDER BY r.rated_at DESC;
+```
+
+#### Files Modified
+- `supabase-schema.sql` — DB migration
+- `pages/api/assessment/rate.js` — NEW endpoint
+- `pages/report/[id].js` — rating state, useEffect, submitRating(), rating UI section
+
+### Ratings on Homepage
+
+**Purpose**: Show aggregate star ratings and recent comments on the public homepage as social proof. Section is entirely hidden when no ratings exist — nothing renders until real user ratings are present.
+
+#### New API Endpoint
+
+**`GET /api/assessment/ratings-summary`** (`pages/api/assessment/ratings-summary.js`):
+- Queries all non-null `rating` rows from `reports` table
+- Returns `{ totalRatings, avgRating, recentComments: [{ rating, comment }] }`
+- Returns `{ totalRatings: 0 }` when no ratings exist (homepage hides the section)
+- Filters comments to only include those with `> 10 characters` (excludes very short/empty submissions)
+- Limits to 3 most recent comments
+- Caches for 5 minutes (`Cache-Control: public, s-maxage=300`) to avoid hammering Supabase on every page load
+
+#### Homepage Changes (`pages/index.js`)
+
+- Converted from pure static component to client component with `useState` / `useEffect`
+- Added `ratings` state — fetches from `/api/assessment/ratings-summary` on load
+- Ratings section renders between the Pricing section and the Footer, **only when `ratings !== null`** (i.e., only when `totalRatings > 0`)
+- Section shows:
+  - Average score (e.g. **4.8**) in Georgia serif alongside filled/empty star glyphs
+  - Total count subtitle ("from 12 completed assessments")
+  - Up to 3 recent comment cards in a responsive grid (shown only if comments exist)
+  - Comments are quoted and anonymous (no names displayed)
+
+#### Files Modified
+- `pages/api/assessment/ratings-summary.js` — NEW public endpoint
+- `pages/index.js` — added useState/useEffect import + ratings fetch + conditional ratings section
+
+### Pre-Launch Database Clear
+
+**File**: `clear_user_data.sql` (repo root)
+
+Run this in **Supabase SQL Editor → New Query** before going live to wipe all test data.
+
+**Tables cleared** (in FK-safe order):
+1. `answers` (references assessments)
+2. `reports` (references assessments + users)
+3. `assessments` (references payments + users)
+4. `payments` (references users)
+5. `audit_log` (independent)
+6. `users` (root table, cleared last)
+
+**Tables preserved**: `system_config` — prices and settings are untouched.
+
+After running, the script executes a verification `SELECT` showing remaining row counts for each table. All should be 0.
+
+### Retake Assessment Continue Fix
+
+**Problem**: The "Continue Assessment" banner on the dashboard only showed when `!hasReports`, meaning retake users (who already have completed reports) never saw it. If they dropped mid-retake and came back, the only button was "Retake Assessment" which sent them back to payment again.
+
+**Fix** (`pages/dashboard.js`):
+- Removed `!hasReports` condition from the saved-progress banner — it now shows any time there's progress in localStorage, with context-aware title ("You have a retake assessment in progress" vs "You have an assessment in progress")
+- Updated `handleRetake()` to check `hasSavedProgress` first: if true, alerts the user and redirects to `/assessment` to continue instead of going to payment
+
+**Files Modified**:
+- `pages/dashboard.js` — banner condition and handleRetake guard
+
