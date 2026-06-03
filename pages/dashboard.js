@@ -39,6 +39,11 @@ export default function Dashboard() {
   }
 
   async function handleRetake() {
+    if (hasSavedProgress) {
+      window.alert('You already have a retake assessment in progress. Continue where you left off.')
+      router.push('/assessment')
+      return
+    }
     const confirmed = window.confirm(
       `Taking a new assessment requires a new payment of R${price} + VAT.\n\nYour previous reports will remain saved and viewable.\n\nContinue to payment?`
     )
@@ -98,13 +103,15 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* ── SAVED PROGRESS BANNER ── */}
-        {hasSavedProgress && !hasReports && (
+        {/* ── SAVED PROGRESS BANNER ── shown for both first-time and retake users ── */}
+        {hasSavedProgress && (
           <div style={{ background: '#eeedfe', border: '1px solid #afa9ec', borderRadius: 12, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h3 style={{ color: '#3c3489', fontSize: '1rem', margin: '0 0 4px' }}>You have an assessment in progress</h3>
+              <h3 style={{ color: '#3c3489', fontSize: '1rem', margin: '0 0 4px' }}>
+                {hasReports ? 'You have a retake assessment in progress' : 'You have an assessment in progress'}
+              </h3>
               <p style={{ color: '#534ab7', fontSize: '0.875rem', margin: 0 }}>
-                {savedAnswerCount} of 49 questions answered — pick up exactly where you left off.
+                {savedAnswerCount} question{savedAnswerCount !== 1 ? 's' : ''} answered — pick up exactly where you left off.
               </p>
             </div>
             <Link href="/assessment" style={{ background: '#3c3489', color: '#fff', borderRadius: 8, padding: '10px 20px', textDecoration: 'none', fontWeight: 500, fontSize: '0.875rem', flexShrink: 0 }}>
