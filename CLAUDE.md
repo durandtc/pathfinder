@@ -1607,3 +1607,28 @@ After running, the script executes a verification `SELECT` showing remaining row
 **Files Modified**:
 - `pages/dashboard.js` — banner condition and handleRetake guard
 
+### Ratings Display Feature Flag — June 4, 2026
+
+**Problem**: The ratings section was visible on the homepage immediately after the first review was left. As a new platform, early reviews may not all be positive, potentially harming conversion before the product has enough positive social proof.
+
+**Solution**: Added `NEXT_PUBLIC_SHOW_RATINGS` environment variable to toggle the homepage ratings section on/off without losing data.
+
+**How it works**:
+- Ratings continue to be collected and stored in the database regardless of the flag
+- The `/api/assessment/ratings-summary` endpoint continues to fetch and cache ratings
+- The homepage `pages/index.js` checks both `NEXT_PUBLIC_SHOW_RATINGS === 'true'` AND `ratings` exists before rendering the section
+- When disabled (default), the ratings section is completely hidden from public view
+- When enabled, accumulated ratings display immediately with no code changes needed
+
+**Configuration**:
+- Add to Vercel environment variables: `NEXT_PUBLIC_SHOW_RATINGS=true` (default is disabled when unset)
+- To toggle: update Vercel env var and redeploy (or git push triggers redeploy)
+
+**Business use case**:
+- Launch site and collect first 20–50 reviews privately
+- Only enable flag once you have sufficient positive feedback (e.g., avg rating ≥4.0)
+- No data loss — all reviews collected during the disabled period appear immediately when enabled
+
+**Files Modified**:
+- `pages/index.js` — Added feature flag check to ratings section render condition
+

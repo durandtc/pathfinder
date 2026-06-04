@@ -7,7 +7,11 @@
       "WebSearch",
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "Bash(curl -s http://localhost:3000/)"
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(npm list *)",
+      "Bash(npx puppeteer *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(python --version 2>&1)"
     ]
   }
 }

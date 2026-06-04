@@ -160,8 +160,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* RATINGS — only renders when there are real ratings */}
-      {ratings && (
+      {/* RATINGS — only renders when feature flag is enabled AND there are real ratings */}
+      {process.env.NEXT_PUBLIC_SHOW_RATINGS === 'true' && ratings && (
         <section style={{ padding: '5rem 2rem', background: 'var(--white)' }}>
           <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', marginBottom: '0.75rem' }}>What families say</div>
