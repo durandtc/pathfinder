@@ -18,9 +18,9 @@ export default function Payment() {
 
   const price = parseInt(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
   const vat = parseInt(process.env.NEXT_PUBLIC_VAT_RATE || '15')
-  const vatAmount = parseFloat((price * vat / 100).toFixed(2))
-  const subtotalWithVat = price + vatAmount
-  const total = Math.max(0, subtotalWithVat - couponDiscount)
+  const discountedPrice = Math.max(0, price - couponDiscount)
+  const vatAmount = parseFloat((discountedPrice * vat / 100).toFixed(2))
+  const total = parseFloat((discountedPrice + vatAmount).toFixed(2))
 
   useEffect(() => {
     const u = localStorage.getItem('pmp_user')
@@ -119,10 +119,10 @@ export default function Payment() {
 
           <div style={{ background: 'var(--cream)', borderRadius: 10, padding: '1.25rem', margin: '1.5rem 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-mid)', padding: '4px 0' }}>
-              <span>PickMyPath — Full Assessment</span><span>R{price}.00</span>
+              <span>PickMyPath — Full Assessment</span><span>R{discountedPrice}.00</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-mid)', padding: '4px 0' }}>
-              <span>VAT ({vat}%)</span><span>R{(price * vat / 100).toFixed(2)}</span>
+              <span>VAT ({vat}%)</span><span>R{vatAmount.toFixed(2)}</span>
             </div>
             {couponApplied && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#22863a', padding: '4px 0' }}>

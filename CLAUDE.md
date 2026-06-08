@@ -1751,3 +1751,30 @@ Example: R399 assessment, R199.50 discount → PayFast charged R199.50
 6. Try applying code 5 more times → 6th attempt should get "usage limit reached" error
 7. Try invalid code → should get "Invalid or inactive coupon code" error
 
+#### VAT Recalculation Fix — June 8, 2026
+
+**Problem**: When a coupon was applied, the discount was deducted from the total but VAT was not recalculated. This caused the displayed VAT to remain based on the original price rather than the discounted price.
+
+**Example of the bug**:
+- Original price: R399
+- Original VAT (15%): R59.85
+- Coupon discount: R199.50
+- Bug result: Total shown as R259.35 (R399 - R199.50 + R59.85 of original VAT) ❌
+
+**Fix** (`pages/payment.js`):
+- Changed VAT calculation to be based on `discountedPrice` (price minus coupon) instead of original `price`
+- Pricing display now shows:
+  - **Assessment price**: `discountedPrice` (reduced amount actually being charged)
+  - **VAT**: Calculated as `discountedPrice * 15 / 100`
+  - **Total**: `discountedPrice + vatAmount` (correct)
+
+**Example with fix**:
+- Original price: R399
+- Coupon discount: R199.50
+- Discounted price: R199.50
+- VAT on discounted price (15%): R29.925
+- Total: R229.425 ✓
+
+**Files modified**:
+- `pages/payment.js` — Recalculates VAT based on discounted price, updates pricing breakdown display
+
