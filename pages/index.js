@@ -43,6 +43,11 @@ export default function Home() {
               How it works
             </a>
           </div>
+          <div style={{ marginTop: '2rem' }}>
+            <a href="/sample-report.pdf" download style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.95rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', transition: 'color 0.2s ease' }}>
+              📄 Download a sample report
+            </a>
+          </div>
           <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginTop: '3.5rem', flexWrap: 'wrap' }}>
             {[['45 mins', 'To clarity'], ['3', 'Career matches'], ['100%', 'Your unique profile'], ['CAPS', 'SA aligned']].map(([n, l]) => (
               <div key={l} style={{ textAlign: 'center' }}>

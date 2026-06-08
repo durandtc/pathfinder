@@ -11,7 +11,10 @@
       "Bash(npm list *)",
       "Bash(npx puppeteer *)",
       "PowerShell(Remove-Item *)",
-      "PowerShell(python --version 2>&1)"
+      "PowerShell(python --version 2>&1)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

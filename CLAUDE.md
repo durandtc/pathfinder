@@ -1632,6 +1632,22 @@ After running, the script executes a verification `SELECT` showing remaining row
 **Files Modified**:
 - `pages/index.js` — Added feature flag check to ratings section render condition
 
+### Sample Report Download — June 8, 2026
+
+**Purpose**: Allow prospective users to download a sample career report before committing to payment. Reduces purchase friction and shows exactly what they'll receive.
+
+**Implementation**:
+- Added `Sample.pdf` to `public/sample-report.pdf` (served as static asset)
+- Added "📄 Download a sample report" link in hero section below main CTAs
+- Link is subtle and non-intrusive, positioned early on landing page
+- No authentication required — open to all visitors
+
+**Files Modified**:
+- `public/sample-report.pdf` — NEW: Sample report PDF
+- `pages/index.js` — Added download link below "Start Now" and "How it works" buttons
+
+---
+
 ### School Pilot Coupon System — June 8, 2026
 
 **Problem**: When piloting with schools, can't expect them to pay full price (R399). Need a way to offer discounted or free assessments to pilot schools while tracking usage and maintaining pricing integrity.
