@@ -98,6 +98,32 @@ export default async function handler(req, res) {
       payfast_payment_id: itnData.pf_payment_id,
     }).eq('id', paymentId)
 
+    // Decrement coupon usage if a coupon was applied
+    if (payment.coupon_code) {
+      const { data: coupon } = await db
+        .from('coupons')
+        .select('code_number')
+        .eq('code', payment.coupon_code)
+        .single()
+
+      if (coupon && coupon.code_number > 0) {
+        // Count current usage
+        const { count: usedCount } = await db
+          .from('payments')
+          .select('*', { count: 'exact', head: true })
+          .eq('coupon_code', payment.coupon_code)
+          .eq('status', 'completed')
+
+        // Only decrement if we haven't exceeded the limit (extra safety check)
+        if (usedCount < coupon.code_number) {
+          await db
+            .from('coupons')
+            .update({ code_number: coupon.code_number - 1 })
+            .eq('code', payment.coupon_code)
+        }
+      }
+    }
+
     const { data: existingAssessment } = await db.from('assessments')
       .select('*')
       .eq('payment_id', paymentId)
@@ -113,7 +139,7 @@ export default async function handler(req, res) {
 
     await db.from('audit_log').insert({
       action: 'PayFast payment completed',
-      details: `Payment ${paymentId} · PF ID ${itnData.pf_payment_id} · R${itnData.amount_gross}`,
+      details: `Payment ${paymentId} · PF ID ${itnData.pf_payment_id} · R${itnData.amount_gross}${payment.coupon_code ? ` · Coupon: ${payment.coupon_code}` : ''}`,
       performed_by: 'system',
     })
   } else if (itnData.payment_status === 'FAILED') {

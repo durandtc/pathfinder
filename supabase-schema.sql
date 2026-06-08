@@ -133,3 +133,22 @@ update users set terms_accepted = true where terms_accepted = false;
 alter table reports add column if not exists rating integer check (rating >= 1 and rating <= 5);
 alter table reports add column if not exists rating_comment text;
 alter table reports add column if not exists rated_at timestamptz;
+
+-- ── COUPONS ────────────────────────────────────────────────
+create table if not exists coupons (
+  id               uuid primary key default uuid_generate_v4(),
+  school           text not null,
+  code             text not null unique,
+  discount_amount  numeric(10,2) not null,
+  code_number      int not null default 0,  -- max uses allowed (0 = unlimited)
+  is_active        boolean default true,
+  created_at       timestamptz default now()
+);
+
+-- ── MIGRATION: Add coupon tracking to payments ────
+alter table payments add column if not exists coupon_code text references coupons(code);
+
+-- Enable RLS on coupons table
+alter table coupons enable row level security;
+drop policy if exists "Service role full access - coupons" on coupons;
+create policy "Service role full access - coupons" on coupons for all using (true);

@@ -1632,3 +1632,122 @@ After running, the script executes a verification `SELECT` showing remaining row
 **Files Modified**:
 - `pages/index.js` — Added feature flag check to ratings section render condition
 
+### School Pilot Coupon System — June 8, 2026
+
+**Problem**: When piloting with schools, can't expect them to pay full price (R399). Need a way to offer discounted or free assessments to pilot schools while tracking usage and maintaining pricing integrity.
+
+**Solution**: Coupon code system with fixed discount amounts per school, usage limits, and automatic counter decrement on successful payment.
+
+#### Database Schema
+
+**New table: `coupons`**
+```sql
+id              uuid primary key
+school          text not null           -- school name (e.g. "Greenside High")
+code            text unique not null    -- coupon code (e.g. "GREENSIDE50")
+discount_amount numeric(10,2)           -- fixed ZAR discount (e.g. 199.50)
+code_number     int default 0           -- max times code can be used (0 = unlimited)
+is_active       boolean default true    -- soft-delete flag
+created_at      timestamptz
+```
+
+**New column on `payments` table**:
+- `coupon_code` text — references coupons(code), tracks which coupon was used
+
+#### API Endpoints
+
+**`GET /api/payment/validate-coupon?code=SCHOOLCODE`**
+- Validates coupon code (checks is_active, code_number limit)
+- Returns `{ valid: true, discountAmount, school }`
+- Returns error if code invalid, inactive, or usage limit reached
+- Only counts completed payments toward usage limit (abandoned carts don't count)
+
+**`POST /api/payment/initiate`** (updated)
+- Now accepts `couponCode` and `finalAmount` in request body
+- Validates coupon on backend (extra safety check)
+- Stores coupon_code in payment record
+- Applies discount before sending amount to PayFast (avoids signature mismatches)
+
+**`POST /api/payment/verify`** (updated)
+- On successful payment (COMPLETE status), decrements coupon `code_number` counter
+- Only decrements if code_number > 0 and hasn't been exceeded
+- Logs coupon code in audit_log entry for tracking
+
+#### Frontend: Payment Page (`pages/payment.js`)
+
+**New UI section**: Coupon code input below the pricing breakdown
+- Text input (case-insensitive, uppercase on display)
+- Apply/Clear buttons
+- Shows discount amount and school name when applied
+- Shows error messages:
+  - "Invalid or inactive coupon code" — code doesn't exist or is_active=false
+  - "This coupon code has reached its usage limit" — code_number exhausted
+- Passes coupon code to payment initiation
+- Final amount calculation: `(priceExVat * (1 + VAT%)) - discountAmount`
+
+#### Managing Coupons
+
+**Creating new codes**: Use SQL in Supabase SQL Editor
+```sql
+INSERT INTO coupons (school, code, discount_amount, code_number, is_active)
+VALUES ('School Name', 'SCHOOLCODE', 199.50, 30, true);
+```
+
+Example:
+- School "Greenside High" → code "GREENSIDE50" → R199.50 discount → max 30 uses
+- School "Parktown" → code "PARKTOWN75" → R299.25 discount (75% off) → max 20 uses
+- School "Braamfontein" → code "BRAAMFONTEIN100" → R399 discount (free) → max 50 uses
+
+**Checking usage**:
+```sql
+SELECT c.school, c.code, c.code_number, COUNT(p.id) as times_used
+FROM coupons c
+LEFT JOIN payments p ON c.code = p.coupon_code AND p.status = 'completed'
+WHERE c.is_active = true
+GROUP BY c.id, c.school, c.code, c.code_number;
+```
+
+**Disabling a code**:
+```sql
+UPDATE coupons SET is_active = false WHERE code = 'SCHOOLCODE';
+```
+
+#### How It Works (User Flow)
+
+1. User arrives at `/payment` page
+2. Sees optional "Have a school coupon code?" section below pricing
+3. Enters code (e.g., "GREENSIDE50")
+4. Clicks Apply → frontend calls `/api/payment/validate-coupon`
+5. If valid: shows discount amount and school name, updates total
+6. User clicks "Pay R[total]" → sends coupon_code to initiate endpoint
+7. Backend validates again, applies discount, sends reduced amount to PayFast
+8. User completes payment on PayFast
+9. PayFast sends ITN callback → payment marked completed
+10. ITN handler decrements coupon `code_number` by 1
+11. If code reaches 0 uses, next user gets "usage limit reached" error
+
+#### Discount Applied BEFORE PayFast
+
+Critical: Discount is deducted from the total before sending to PayFast. This avoids signature mismatches (PayFast calculates signatures based on the final amount).
+
+Example: R399 assessment, R199.50 discount → PayFast charged R199.50
+
+#### Files Created/Modified
+
+- `supabase-schema.sql` — Added coupons table, coupon_code column on payments, RLS policy
+- `pages/api/payment/validate-coupon.js` — NEW: coupon validation endpoint
+- `pages/api/payment/initiate.js` — Now accepts and validates coupon, applies discount
+- `pages/api/payment/verify.js` — Decrements coupon counter on payment success
+- `pages/payment.js` — Added coupon input UI, discount display, validation logic
+- `add-school-coupons.sql` — Reference SQL script for creating coupon codes
+
+#### Testing Checklist
+
+1. Create test coupon in Supabase: `INSERT INTO coupons (school, code, discount_amount, code_number) VALUES ('Test School', 'TEST50', 199.50, 5);`
+2. Go to `/payment` page
+3. Enter "TEST50" and click Apply → should show "Test School" and "R199.50" discount
+4. Click Pay → should charge R199.50 (50% of R399)
+5. After payment completes, check coupons table: `code_number` should be 4 (5 - 1)
+6. Try applying code 5 more times → 6th attempt should get "usage limit reached" error
+7. Try invalid code → should get "Invalid or inactive coupon code" error
+

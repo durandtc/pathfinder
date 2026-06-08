@@ -9,17 +9,59 @@ export default function Payment() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isSandbox, setIsSandbox] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponApplied, setCouponApplied] = useState(false)
+  const [couponSchool, setCouponSchool] = useState('')
+  const [couponValidating, setCouponValidating] = useState(false)
+  const [couponError, setCouponError] = useState('')
 
   const price = parseInt(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
   const vat = parseInt(process.env.NEXT_PUBLIC_VAT_RATE || '15')
   const vatAmount = parseFloat((price * vat / 100).toFixed(2))
-  const total = price + vatAmount
+  const subtotalWithVat = price + vatAmount
+  const total = Math.max(0, subtotalWithVat - couponDiscount)
 
   useEffect(() => {
     const u = localStorage.getItem('pmp_user')
     if (!u) { router.push('/register'); return }
     setUser(JSON.parse(u))
   }, [])
+
+  async function validateCoupon() {
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code')
+      return
+    }
+    setCouponValidating(true)
+    setCouponError('')
+    try {
+      const res = await fetch(`/api/payment/validate-coupon?code=${encodeURIComponent(couponCode)}`, {
+        cache: 'no-store',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Invalid coupon code')
+
+      setCouponDiscount(parseFloat(data.discountAmount))
+      setCouponSchool(data.school)
+      setCouponApplied(true)
+      setCouponError('')
+    } catch (err) {
+      setCouponError(err.message)
+      setCouponApplied(false)
+      setCouponDiscount(0)
+    } finally {
+      setCouponValidating(false)
+    }
+  }
+
+  function clearCoupon() {
+    setCouponCode('')
+    setCouponDiscount(0)
+    setCouponApplied(false)
+    setCouponSchool('')
+    setCouponError('')
+  }
 
   async function handlePayment() {
     setError('')
@@ -28,7 +70,11 @@ export default function Payment() {
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({
+          userId: user.id,
+          couponCode: couponApplied ? couponCode.toUpperCase() : null,
+          finalAmount: total,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Payment initiation failed')
@@ -78,9 +124,84 @@ export default function Payment() {
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-mid)', padding: '4px 0' }}>
               <span>VAT ({vat}%)</span><span>R{(price * vat / 100).toFixed(2)}</span>
             </div>
+            {couponApplied && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#22863a', padding: '4px 0' }}>
+                <span>School Discount ({couponSchool})</span><span>-R{couponDiscount.toFixed(2)}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 500, color: 'var(--navy)', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 6 }}>
               <span>Total</span><span>R{total.toFixed(2)}</span>
             </div>
+          </div>
+
+          <div style={{ background: '#fafbfc', border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, color: 'var(--navy)', marginBottom: '0.5rem' }}>
+              Have a school coupon code? (Optional)
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="text"
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                disabled={couponApplied}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  fontSize: '0.9rem',
+                  fontFamily: 'monospace',
+                  backgroundColor: couponApplied ? '#f0f0f0' : 'white',
+                  cursor: couponApplied ? 'not-allowed' : 'text',
+                }}
+              />
+              {!couponApplied ? (
+                <button
+                  onClick={validateCoupon}
+                  disabled={couponValidating || !couponCode.trim()}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--navy)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    fontSize: '0.9rem',
+                    fontWeight: 500,
+                    cursor: couponValidating || !couponCode.trim() ? 'not-allowed' : 'pointer',
+                    opacity: couponValidating || !couponCode.trim() ? 0.6 : 1,
+                  }}
+                >
+                  {couponValidating ? 'Checking...' : 'Apply'}
+                </button>
+              ) : (
+                <button
+                  onClick={clearCoupon}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#e0e0e0',
+                    color: 'var(--navy)',
+                    border: 'none',
+                    borderRadius: 6,
+                    fontSize: '0.9rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            {couponApplied && (
+              <div style={{ fontSize: '0.85rem', color: '#22863a', marginTop: '0.5rem' }}>
+                ✓ Coupon applied for {couponSchool}
+              </div>
+            )}
+            {couponError && (
+              <div style={{ fontSize: '0.85rem', color: '#cb2431', marginTop: '0.5rem' }}>
+                {couponError}
+              </div>
+            )}
           </div>
 
           {isSandbox && (
