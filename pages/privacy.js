@@ -167,7 +167,7 @@ export default function Privacy() {
           <ul style={{ color: 'var(--text-mid)', lineHeight: 1.7, marginLeft: '1.5rem' }}>
             <li><strong>Authentication cookies:</strong> To keep you logged in (7-day expiry)</li>
             <li><strong>Local storage:</strong> To save your assessment progress temporarily (in-browser only)</li>
-            <li><strong>Analytics:</strong> We do not use Google Analytics or third-party tracking (privacy-first approach)</li>
+            <li><strong>Analytics:</strong> We use Google Analytics (via Google Tag Manager) to understand how users interact with our platform, track page views, and measure feature usage. This helps us improve the service and user experience. Google may set cookies and collect data subject to Google's privacy policy.</li>
           </ul>
         </section>
 

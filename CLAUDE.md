@@ -195,6 +195,19 @@ export default async function handler(req, res) {
 - **Purpose**: Defines user flow stages and eligibility rules (e.g. can't access assessment without payment)
 - **Used by**: Frontend to enable/disable UI, API routes to guard access
 
+### Analytics & Tracking
+
+- **Service**: Google Analytics via Google Tag Manager (GTM)
+- **GTM Container ID**: `GTM-PVJ8CC2C`
+- **Implementation**: `pages/_document.js` (Next.js custom document)
+  - GTM head script injected as high as possible in `<head>`
+  - GTM noscript fallback immediately after opening `<body>` tag
+  - No environment variables required (container ID is hardcoded)
+- **Data collected**: Page views, user interactions, feature usage, conversion tracking
+- **Privacy**: All users see notice in Terms of Service and Privacy Policy about Google Analytics
+- **Verification**: Check browser DevTools → Network tab for `gtm.js` load, or search Console for `gtm.start`
+- **Note**: This is a shift from privacy-first approach (no analytics) to tracked analytics for product improvement
+
 ---
 
 ## Environment Variables
@@ -651,7 +664,7 @@ Two critical print layout bugs fixed in `pages/report/[id].js`.
   6. **Data Retention** — How long data is kept, deletion policy
   7. **Security** — HTTPS, password hashing, JWT tokens, no credit card storage
   8. **Your Rights** — Access, rectify, delete, portability, object (GDPR-style)
-  9. **Cookies & Tracking** — What we use, what we don't (no Google Analytics)
+  9. **Cookies & Tracking** — Authentication cookies, local storage for assessment progress, Google Analytics (via Google Tag Manager)
   10. **Third-Party Links** — Not responsible for external sites
   11. **Children & Minors** — Parental consent required for under-13, designed for Grade 8–12
   12. **Changes to Policy** — How updates communicated
