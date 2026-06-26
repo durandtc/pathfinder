@@ -136,7 +136,7 @@ export default function Home() {
         <div style={{ background: '#fff', borderRadius: 16, padding: '2.5rem', maxWidth: 420, margin: '0 auto', border: '2px solid var(--gold)' }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Complete Career Clarity Package</h3>
           <div style={{ fontFamily: 'Georgia,serif', fontSize: '3.2rem', fontWeight: 700, color: 'var(--gold)', marginBottom: '0.5rem' }}>R{price}</div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-mid)', marginBottom: '2rem', fontWeight: 500 }}>Once-off payment (including VAT)</div>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-mid)', marginBottom: '2rem', fontWeight: 500 }}>Once-off payment</div>
           <div style={{ background: 'var(--cream-mid)', padding: '1rem', borderRadius: 8, marginBottom: '2rem' }}>
             <p style={{ color: 'var(--navy)', fontSize: '0.85rem', margin: 0, fontWeight: 300 }}>
               <strong>What you're paying for:</strong> Clarity, not guessing. Confidence, not anxiety. A roadmap for the next two years.

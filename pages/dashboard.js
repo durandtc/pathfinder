@@ -45,7 +45,7 @@ export default function Dashboard() {
       return
     }
     const confirmed = window.confirm(
-      `Taking a new assessment requires a new payment of R${price} + VAT.\n\nYour previous reports will remain saved and viewable.\n\nContinue to payment?`
+      `Taking a new assessment requires a new payment of R${price}.\n\nYour previous reports will remain saved and viewable.\n\nContinue to payment?`
     )
     if (confirmed) router.push('/payment')
   }
@@ -185,7 +185,7 @@ export default function Dashboard() {
                 Your interests evolve over time. A retake generates a completely new report. All previous reports are always kept and viewable.
               </p>
               <button onClick={handleRetake} style={{ background: 'transparent', color: 'var(--navy)', border: '1.5px solid var(--navy)', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500 }}>
-                Retake for R{price} + VAT
+                Retake for R{price}
               </button>
             </div>
           </div>

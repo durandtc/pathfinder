@@ -1807,3 +1807,263 @@ Example: R399 assessment, R199.50 discount → PayFast charged R199.50
 **Files modified**:
 - `pages/payment.js` — Recalculates VAT based on discounted price, updates pricing breakdown display
 
+---
+
+### School Outreach: Initial Contact Email Template — June 10, 2026
+
+**Status**: First school outreach email prepared and ready to send.
+
+**Strategy**: Direct outreach to schools (no psychometrist intermediary) to pilot PickMyPath with Grade 9 classes. Position as a new, high-quality guidance tool with research-backed frameworks and premium features.
+
+#### Email Template
+
+**Subject**: New Career Guidance Tool for Grade 9–12 Students
+
+**Body**:
+```
+I'm reaching out because I've developed a career guidance platform for South African high school students. The tool helps Grade 9 students make confident subject choices and explore realistic career paths.
+
+It's built around the Holland RIASEC framework and CAPS-aligned subjects. Students complete a 45-question assessment (±30 mins), and the system generates a personalized career report with:
+- Top 3 career matches with day-in-the-life descriptions
+- Salary ranges and career progression paths
+- Subject advice tailored to their strengths
+- Actionable next steps for exploration
+
+I have a sample report I can share so either Deputy Pentz or Cassim can see exactly what students receive.
+
+Would either of them be available next week for a 15-minute face-to-face meeting? Happy to come to the school at your convenience.
+
+[Your name]
+[Your email/phone]
+```
+
+#### Key Messaging Principles
+
+1. **Personal and specific** — Name the actual deputy heads (research first)
+2. **Concrete deliverables** — What students get (top 3 matches, salary, day-in-the-life, etc.)
+3. **Reduces friction** — Sample report upfront so they can evaluate without committing
+4. **Specific ask** — 15 minutes, face-to-face, flexible on timing
+5. **Honest about stage** — Upfront this is a new product in pilot phase (not positioning as established)
+6. **Invitation to partnership** — Position the school as an early adopter, not just a customer
+
+#### Targeting Approach
+
+- **Research first**: Identify deputy heads responsible for guidance/academics at target schools
+- **One school at a time**: Start with single high-quality prospect, not mass outreach
+- **Local or reference-based**: Schools with existing guidance programs (easier to demo value)
+- **Coupon ready**: Have a coupon code prepared for the pilot (e.g., "SCHOOLNAME50" at 50% discount or free)
+
+#### Follow-up If No Response
+
+If no response in 3–4 days, send a brief "just checking in" email to the secretary. They're busy; emails get buried.
+
+#### Preparation Before Meeting
+
+1. **Print flyers** (A6 v4 and A5 v5 from `a6-flyer-v4.html` and `a5-flyer-v5.html`)
+2. **Sample report ready** (`public/sample-report.pdf` or live link to `pickmypath.co.za`)
+3. **Pitch deck** (optional): 1-page one-pager with key benefits, RIASEC framework, pricing, next steps
+4. **Coupon code created**: Generate pilot discount code in Supabase `coupons` table (e.g., 50% or free for 30–50 students)
+5. **Demo account**: Have a test user ready to show the full flow
+
+#### Expected Outcomes
+
+- **Best case**: School agrees to 1-class pilot (±30 students) at discounted rate within 2 weeks
+- **Good case**: School wants more info or a follow-up demo with more staff
+- **Realistic case**: 30–40% response rate on initial outreach
+
+#### Files Modified
+- `CLAUDE.md` — Added school outreach email template and strategy documentation
+
+---
+
+### Psychometrist Validation Strategy — June 22, 2026
+
+**Status**: Two concurrent outreach threads in progress. Professional endorsement from a qualified psychometrist is a credibility asset for school partnerships.
+
+#### Psychometrist #1 — July Holiday Follow-up
+
+**Timeline**:
+- Initial contact: Expressed limited availability, committed to review during July holidays
+- User follow-up: Asked if she knew colleagues who could review earlier (no response)
+- Status as of June 22: Sent warm follow-up confirming July timing
+
+**Email sent (June 22, 2026)**:
+```
+Subject: Quick check-in — July feedback on PickMyPath
+
+Hi [Name],
+
+I hope you've been well! July holidays are just around the corner now, and I wanted to reach out to check if you'd still be open to reviewing PickMyPath during that time.
+
+I've made good progress since we last spoke — the platform now includes day-in-the-life career descriptions, salary ranges, career progression timelines, and tailored parent guidance, all powered by the Holland RIASEC framework and CAPS-aligned subjects.
+
+Would you have 15–20 minutes sometime during the July break to take a look? I can send you a direct link to a sample report so you can see exactly what students receive, or I'm happy to walk through it with you if that's easier.
+
+I genuinely value your perspective as a professional in the space. Your feedback would be invaluable before I start broader school outreach.
+
+Let me know what works best for you.
+
+Best,
+Calvin
+calvin.du.randt@gmail.com
+```
+
+**Next steps**:
+- Wait for response during July
+- If no response by end of July, move on to other leads without chasing further
+
+#### Psychometrist #2 — Unresponsive After Initial Commitment
+
+**Timeline**:
+- Initial contact: Committed to review "over the weekend"
+- Status as of June 22: No response for over a month
+
+**Strategy**:
+- One light follow-up only (not pushy) acknowledging the time delay
+- Make engagement low-friction (direct link to sample report)
+- Provide easy out ("no worries if things got busy")
+- If no response to follow-up, deprioritize and focus on other leads
+- Two non-responses = signal of low interest; don't chase
+
+**Key principle**: Spend energy on actively engaged contacts, not chasing unresponsive ones. A month of silence typically indicates deprioritization on their end.
+
+#### Validation Goals
+
+- **Professional endorsement**: Qualifies the assessment framework and AI output alignment with career development best practices
+- **Credibility for school outreach**: "Reviewed by [psychometrist name], registered [credential]"
+- **Market validation**: Ensure report quality and career matching logic are sound before broader rollout
+- **Referral potential**: Positive feedback could lead to recommendations within professional networks
+
+#### If Both Leads Go Cold
+
+Proceed with direct school outreach (already underway). Professional endorsement is a *credibility asset*, not a blocker. Schools care most about outcomes (do students make better subject choices, do parents approve) and safety (no liability exposure).
+
+#### Psychometrist #3 — Jo Coertzen (STRONG FIT)
+
+**Timeline**:
+- Discovered: June 25, 2026 via social media advertising
+- Location: Blaauwberg Therapy Centre
+- Outreach: Email sent June 25, 2026
+
+**Why this is a strong fit**:
+- Jo specializes in **Subject Choice assessments for Grade 9s** — exact PickMyPath target
+- Also offers **Career assessments for adolescents and young adults** — direct alignment
+- Works with **WCED, IEB, SACAI, and universities** — established credibility
+- Actively advertising (signal of growth mindset and current market engagement)
+- Therapy centre model = existing student/parent client base (natural referral pipeline)
+
+**Specializations**:
+- Accommodations/concessions assessments for WCED, IEB, SACAI, university
+- Subject choice assessments (Grade 9)
+- Career assessments (adolescents & young adults)
+- Career change assessments (adults)
+
+**Email sent (June 25, 2026)**:
+```
+Subject: Partnership Opportunity — Career Guidance Platform + Your Expertise
+
+Hi Jo,
+
+I trust this email finds you well.
+
+I managed to get your details from the Blaauwberg Therapy Centre. Your subject choice assessments for Grade 9s caught my attention — there's a natural overlap with PickMyPath, a career guidance platform I've developed.
+
+The platform uses the Holland RIASEC framework and generates personalized reports with top 3 career matches, day-in-the-life descriptions, salary ranges, and subject-specific guidance — all based on a 45-question assessment (±30 mins).
+
+I'm keen to partner with someone experienced in this space — both to validate that PickMyPath aligns with best practices in career guidance, and to get your input on improving it. I've built something promising, but I want to refine it based on professional expertise before rolling it out more broadly. Your perspective on the assessment framework, report structure, and overall approach would be invaluable in making this genuinely excellent for students.
+
+I'd love to show you a sample report and hear your thoughts on alignment with best practices, and whether a mutual referral arrangement could work for your practice.
+
+Would you have 15 minutes sometime this week or next for a quick call? I can also just send you a sample report if you'd prefer to take a look first.
+
+Best,
+Calvin du Randt
+calvin.du.randt@gmail.com
+pickmypath.co.za
+```
+
+**Partnership model**:
+1. **Mutual referral**: PickMyPath → Jo for students needing deeper professional assessment; Jo → PickMyPath for initial career/subject screening
+2. **Professional input**: Jo reviews framework and reports for alignment with best practices
+3. **Credibility**: "Endorsed by Jo Coertzen, Educational Psychologist" for marketing/schools
+4. **Client benefit**: Students get low-cost AI-powered initial guidance, then can pursue deeper assessment if needed
+
+**Her Reply (June 25, 2026)** — POSITIVE, same day:
+```
+This is so interesting - thanks for reaching out! I have a special interest in career development so am very happy to chat further.
+
+I like the RIASEC framework but I think we only have the SAVII in SA from 1992 where some of the questions are about typewriters!
+Will be lovely to see a more updated version of the framework.
+
+Very happy to do an online call to chat further - you're welcome to send me the sample report before.
+
+I have some gaps on Tuesday if that works for you?
+```
+
+**Key signals**:
+- ✅ Genuine interest — "so interesting", "very happy to chat"
+- ✅ Relevant expertise — "special interest in career development"
+- ✅ Technical feedback — knowledgeable about SAVII limitations; appreciates modernized approach
+- ✅ Fast engagement — replied same day
+- ✅ Flexible — willing to review sample first
+
+**Response Sent (June 25, 2026)**:
+```
+Hi Jo,
+
+This is fantastic — thank you so much for the quick reply and for the thoughtful feedback on SAVII. The Holland RIASEC framework has evolved considerably and pairing it with modern career data (day-in-the-life descriptions, current salary ranges, career progression paths) makes it much more relevant for students making real decisions today.
+
+I'd love your perspective on whether the modern approach holds up professionally. Tuesday works perfectly for me — would 2pm or 3pm suit you best?
+
+I have attached a sample report so you can take a look before the call. That way you can see the full flow and report structure, and we can jump straight into the substantive bits about framework alignment and how this might work as a referral partnership.
+
+Looking forward to chatting!
+
+Best,
+Calvin
+```
+
+**Call Status**: Scheduled for **Tuesday, July 1, 2026** (2pm or 3pm pending her confirmation)
+
+**Preparation for call**:
+- Review RIASEC framework basics (6 types: Realistic, Investigative, Artistic, Social, Enterprising, Conventional)
+- Understand SAVII limitations (1992 framework, outdated career references)
+- Be ready to discuss: PickMyPath as modernized tool (RIASEC + day-in-the-life + salary + progression), not replacement for professional assessment
+- Go as learner, not expert — ask her for validation on professional soundness
+- Discuss potential partnership: mutual referrals, Jo refers PickMyPath for initial screening, PickMyPath refers to Jo for deeper assessment
+
+---
+
+### VAT Removal — June 26, 2026
+
+**Status**: COMPLETED
+
+**Change**: Removed 15% VAT from all pricing. Assessment now charged at flat **R399** (or configured `NEXT_PUBLIC_ASSESSMENT_PRICE`).
+
+**Reason**: Annual turnover is below R1 million, so no VAT registration required. Removing VAT simplifies pricing, reduces payment friction, and makes the product more affordable for school pilots.
+
+#### Changes Made
+
+**Payment page** (`pages/payment.js`):
+- Removed `NEXT_PUBLIC_VAT_RATE` variable
+- Removed VAT calculation: `total = discountedPrice` (no VAT added)
+- Removed VAT line from pricing breakdown display
+- Final amount sent to PayFast is now just the base price
+
+**Dashboard** (`pages/dashboard.js`):
+- Updated retake confirmation: `"R{price}"` instead of `"R{price} + VAT"`
+- Updated retake button text: `"Retake for R{price}"` instead of `"Retake for R{price} + VAT"`
+
+**Homepage** (`pages/index.js`):
+- Updated pricing subtext: `"Once-off payment"` instead of `"Once-off payment (including VAT)"`
+
+#### No Environment Variables to Remove
+
+The `NEXT_PUBLIC_VAT_RATE` environment variable (if it exists in Vercel) can be left as-is or deleted — it's no longer referenced in code. The code now hard-codes no VAT.
+
+#### Payment Processing
+
+PayFast receives the exact amount to charge (e.g., R399) with no VAT addition. All transactions now bypass VAT entirely.
+
+---
+
