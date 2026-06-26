@@ -1716,27 +1716,51 @@ created_at      timestamptz
 
 #### Managing Coupons
 
-**Creating new codes**: Use SQL in Supabase SQL Editor
+**Creating a new coupon code**:
+
+1. Open your **Supabase Dashboard**
+2. Go to **SQL Editor** → **New Query**
+3. Run this SQL (customize the values below):
+
 ```sql
 INSERT INTO coupons (school, code, discount_amount, code_number, is_active)
 VALUES ('School Name', 'SCHOOLCODE', 199.50, 30, true);
 ```
 
-Example:
-- School "Greenside High" → code "GREENSIDE50" → R199.50 discount → max 30 uses
-- School "Parktown" → code "PARKTOWN75" → R299.25 discount (75% off) → max 20 uses
-- School "Braamfontein" → code "BRAAMFONTEIN100" → R399 discount (free) → max 50 uses
+**Parameters**:
+- `'School Name'` — School name (e.g., "Greenside High")
+- `'SCHOOLCODE'` — Coupon code students enter (uppercase, e.g., "GREENSIDE50") — must be unique
+- `199.50` — Fixed discount amount in ZAR (e.g., 199.50 = 50% off R399; 399 = free)
+- `30` — Max number of times code can be used (0 = unlimited)
+- `true` — Active/enabled (set to false to disable later)
 
-**Checking usage**:
+**Examples**:
 ```sql
-SELECT c.school, c.code, c.code_number, COUNT(p.id) as times_used
-FROM coupons c
-LEFT JOIN payments p ON c.code = p.coupon_code AND p.status = 'completed'
-WHERE c.is_active = true
-GROUP BY c.id, c.school, c.code, c.code_number;
+-- 50% discount (R199.50 off), max 30 uses
+INSERT INTO coupons (school, code, discount_amount, code_number, is_active)
+VALUES ('Greenside High', 'GREENSIDE50', 199.50, 30, true);
+
+-- 75% discount (R299.25 off), max 20 uses
+INSERT INTO coupons (school, code, discount_amount, code_number, is_active)
+VALUES ('Parktown', 'PARKTOWN75', 299.25, 20, true);
+
+-- Free assessment (R399 off), max 50 uses
+INSERT INTO coupons (school, code, discount_amount, code_number, is_active)
+VALUES ('Braamfontein', 'BRAAMFONTEIN100', 399.00, 50, true);
 ```
 
-**Disabling a code**:
+Coupon is live immediately — students can apply it on `/payment` page.
+
+**Check coupon usage**:
+```sql
+SELECT c.school, c.code, c.code_number, COUNT(p.id) as times_used, c.is_active
+FROM coupons c
+LEFT JOIN payments p ON c.code = p.coupon_code AND p.status = 'completed'
+GROUP BY c.id, c.school, c.code, c.code_number, c.is_active
+ORDER BY c.created_at DESC;
+```
+
+**Disable a code**:
 ```sql
 UPDATE coupons SET is_active = false WHERE code = 'SCHOOLCODE';
 ```
@@ -2064,6 +2088,98 @@ The `NEXT_PUBLIC_VAT_RATE` environment variable (if it exists in Vercel) can be 
 #### Payment Processing
 
 PayFast receives the exact amount to charge (e.g., R399) with no VAT addition. All transactions now bypass VAT entirely.
+
+---
+
+### Free Coupon & VAT Bug Fixes — June 26, 2026
+
+**Status**: FIXED
+
+**Problem 1 — VAT Still Applied to Free Coupons**: When a school coupon provided 100% discount (e.g., R399 discount on R399 item), the final amount sent to PayFast was still calculated with VAT. User would see R0.00 total but PayFast would receive R59.85 (the VAT component), causing payment failures.
+
+**Root Cause**: In `pages/api/payment/initiate.js` line 32, the code used a falsy check: `const totalAmount = finalAmount ? ... : defaultTotal`. When `finalAmount` is `0` (free coupon), JavaScript treats it as falsy and uses the fallback `defaultTotal` which still included VAT calculation.
+
+**Problem 2 — Free Assessments Redirected to PayFast**: When a coupon made the assessment free (R0), the user was still sent to PayFast expecting to enter payment details, instead of being granted immediate access to the assessment.
+
+#### Solution 1 — Fix VAT Calculation in initiate.js
+
+**Changed line 29-32** from:
+```javascript
+const priceExVat  = parseFloat(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
+const vatRate     = parseFloat(process.env.NEXT_PUBLIC_VAT_RATE || '15')
+const defaultTotal = (priceExVat * (1 + vatRate / 100)).toFixed(2)
+const totalAmount = finalAmount ? parseFloat(finalAmount).toFixed(2) : defaultTotal
+```
+
+To:
+```javascript
+const priceExVat  = parseFloat(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
+const defaultTotal = priceExVat.toFixed(2)
+const totalAmount = finalAmount !== null && finalAmount !== undefined ? parseFloat(finalAmount).toFixed(2) : defaultTotal
+```
+
+**What changed**:
+- Removed VAT rate calculation entirely (VAT already removed June 26)
+- Changed falsy check to explicit null/undefined check so `0` is properly recognized as a valid value
+- Now `defaultTotal` is just the base price with no VAT
+
+#### Solution 2 — Auto-Complete Free Assessments
+
+**Changed lines 65-81** in `pages/api/payment/initiate.js` to detect when `totalAmount === 0`:
+```javascript
+// Handle free assessments (R0 due to coupon) or sandbox mode
+if (sandbox || parseFloat(totalAmount) === 0) {
+  const paymentId = sandbox ? 'SANDBOX-' + payment.id : 'FREE-COUPON-' + payment.id
+  await db.from('payments').update({
+    status: 'completed', paid_at: new Date().toISOString(),
+    payfast_payment_id: paymentId,
+  }).eq('id', payment.id)
+
+  await db.from('assessments').insert({ user_id: userId, payment_id: payment.id, status: 'not_started' })
+  const action = parseFloat(totalAmount) === 0 ? 'Free coupon assessment granted' : 'PayFast sandbox payment completed'
+  await db.from('audit_log').insert({ action, details: `User ${user.email} · R${totalAmount}`, performed_by: 'system' })
+  return res.status(200).json({ sandbox: true })
+}
+```
+
+**What changed**:
+- Combined sandbox and free coupon logic into single check (both bypass PayFast)
+- When `totalAmount === 0`, payment is auto-marked as completed with `payfast_payment_id: 'FREE-COUPON-...'`
+- Assessment record created automatically
+- Returns `sandbox: true` flag to frontend (which already handles this by redirecting to `/assessment`)
+- Audit log records action as "Free coupon assessment granted" to distinguish from sandbox payments
+
+#### User Flow After Fix
+
+**Free Coupon (100% discount)**:
+1. User applies coupon code for full discount (e.g., R399 off)
+2. Frontend shows `R0.00` total (no VAT added)
+3. User clicks "Pay" → backend receives `finalAmount: 0`
+4. Backend auto-completes payment (marks as completed, creates assessment)
+5. Backend returns `sandbox: true`
+6. Frontend redirects to `/assessment` immediately
+7. User can start assessment without entering PayFast
+
+**Partial Coupon (e.g., 50% discount)**:
+1. User applies R199.50 coupon discount
+2. Frontend shows `R199.50` total
+3. User clicks "Pay" → backend receives `finalAmount: 199.50`
+4. Backend generates PayFast form and redirects user to PayFast
+5. User completes payment (PayFast charged R199.50)
+6. Normal PayFast flow continues
+
+#### Files Modified
+- `pages/api/payment/initiate.js` — Fixed VAT falsy check, added free-coupon auto-complete logic
+
+#### Testing Checklist
+
+1. Create free coupon: `INSERT INTO coupons (school, code, discount_amount, code_number) VALUES ('Test', 'TEST100', 399.00, 10);`
+2. Go to `/payment` page
+3. Apply "TEST100" coupon → should show `R0.00` total (no VAT)
+4. Click "Pay R0.00 & Start Assessment"
+5. Should redirect immediately to `/assessment` (no PayFast)
+6. Check database: payment should be marked `completed` with `payfast_payment_id: 'FREE-COUPON-...'`
+7. Check audit_log: entry should show "Free coupon assessment granted"
 
 ---
 

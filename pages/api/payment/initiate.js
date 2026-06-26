@@ -27,9 +27,8 @@ export default async function handler(req, res) {
   const merchantId  = process.env.PAYFAST_MERCHANT_ID
   const merchantKey = process.env.PAYFAST_MERCHANT_KEY
   const priceExVat  = parseFloat(process.env.NEXT_PUBLIC_ASSESSMENT_PRICE || '399')
-  const vatRate     = parseFloat(process.env.NEXT_PUBLIC_VAT_RATE || '15')
-  const defaultTotal = (priceExVat * (1 + vatRate / 100)).toFixed(2)
-  const totalAmount = finalAmount ? parseFloat(finalAmount).toFixed(2) : defaultTotal
+  const defaultTotal = priceExVat.toFixed(2)
+  const totalAmount = finalAmount !== null && finalAmount !== undefined ? parseFloat(finalAmount).toFixed(2) : defaultTotal
   const appUrl      = process.env.NEXT_PUBLIC_APP_URL || 'https://yourdomain.co.za'
 
   const { data: user } = await db.from('users').select('*').eq('id', userId).single()
@@ -69,14 +68,17 @@ export default async function handler(req, res) {
     status: 'pending',
   }).select().single()
 
-  if (sandbox) {
+  // Handle free assessments (R0 due to coupon) or sandbox mode
+  if (sandbox || parseFloat(totalAmount) === 0) {
+    const paymentId = sandbox ? 'SANDBOX-' + payment.id : 'FREE-COUPON-' + payment.id
     await db.from('payments').update({
       status: 'completed', paid_at: new Date().toISOString(),
-      payfast_payment_id: 'SANDBOX-' + payment.id,
+      payfast_payment_id: paymentId,
     }).eq('id', payment.id)
 
     await db.from('assessments').insert({ user_id: userId, payment_id: payment.id, status: 'not_started' })
-    await db.from('audit_log').insert({ action: 'PayFast sandbox payment completed', details: `User ${user.email} · R${totalAmount}`, performed_by: 'system' })
+    const action = parseFloat(totalAmount) === 0 ? 'Free coupon assessment granted' : 'PayFast sandbox payment completed'
+    await db.from('audit_log').insert({ action, details: `User ${user.email} · R${totalAmount}`, performed_by: 'system' })
     return res.status(200).json({ sandbox: true })
   }
 
