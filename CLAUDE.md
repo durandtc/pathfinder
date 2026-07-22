@@ -12,18 +12,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Workflow
 
-**Important**: This project uses **Vercel-only deployment**. There is no local `.env.local` development.
+### Local Development Setup (Recommended)
 
-- All code changes are pushed to GitHub
-- Vercel automatically builds and deploys on push
-- All environment variables are configured in **Vercel project settings** (not local .env files)
-- Testing always happens on the **live Vercel deployment** (production parity from the start)
+**Important**: Use local development to test changes BEFORE pushing to GitHub/Vercel. This prevents breaking the live site.
 
-**Local setup** (for code editing only):
+**Local environment does NOT affect production** because:
+- `.env.local` is only read by Next.js when running locally (and is gitignored)
+- Vercel reads its own Environment Variables (separate system)
+- Local database is completely separate from production Supabase
+- GitHub never sees `.env.local`
+
+**Quick start**:
 ```bash
-npm install           # Install dependencies (no npm run dev needed)
-git push              # Push to GitHub → Vercel auto-deploys
+# 1. Install dependencies
+npm install
+
+# 2. Create .env.local (see "Environment Variables" section below for template)
+# Copy all Vercel env vars into .env.local, pointing to local services
+
+# 3. Start local Supabase (or Docker PostgreSQL)
+supabase start
+# OR: docker run --name pickmypath-db -e POSTGRES_PASSWORD=localpassword -e POSTGRES_DB=pickmypath -p 5432:5432 -d postgres:15
+
+# 4. Start Next.js dev server
+npm run dev
+
+# 5. Open browser and test
+# http://localhost:3000
 ```
+
+**Full setup instructions**: See `instructions.txt` in repo root for detailed step-by-step guide including:
+- Installing Node.js, Docker, Supabase CLI on WSL
+- Creating `.env.local` file with all required variables
+- Setting up local Supabase or PostgreSQL
+- Local email testing with MailHog
+
+### Deployment Workflow
+
+Once you've tested locally and are confident in your changes:
+
+```bash
+# 1. Commit changes locally
+git add .
+git commit -m "Your descriptive message"
+
+# 2. Push to GitHub
+git push
+
+# 3. Vercel automatically builds and deploys
+# Monitor at: https://vercel.com/dashboard → Your Project
+
+# 4. Test on live site
+# https://www.pickmypath.co.za
+```
+
+**Production deployment notes**:
+- All environment variables configured in **Vercel project settings** (not in code or `.env.local`)
+- Vercel rebuilds on every push to main branch
+- If something breaks on Vercel, you can always roll back via Vercel dashboard
 
 ---
 
@@ -212,7 +258,9 @@ export default async function handler(req, res) {
 
 ## Environment Variables
 
-**All environment variables are configured in Vercel project settings** (not local .env files). Configure these in **Vercel Dashboard → Settings → Environment Variables**:
+### Production (Vercel)
+
+**All production environment variables are configured in Vercel project settings**. Configure these in **Vercel Dashboard → Settings → Environment Variables**:
 
 - **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - **Anthropic AI**: `ANTHROPIC_API_KEY` and `AI_MODEL` (claude-sonnet-4-6 for production)
@@ -228,7 +276,67 @@ export default async function handler(req, res) {
 - **Payments (PayFast)**:
   - `PAYFAST_MERCHANT_ID` — Your PayFast merchant ID
   - `PAYFAST_MERCHANT_KEY` — Your PayFast merchant key
+  - `PAYFAST_PASSPHRASE` — Account passphrase from PayFast Settings → Integration (must match exactly)
   - `PAYFAST_SANDBOX` — Set to `true` for sandbox mode (auto-complete payments, no PayFast redirect), `false` for live transactions
+- **Analytics**: `NEXT_PUBLIC_SHOW_RATINGS` — `true` to display user ratings on homepage, `false` to hide (data continues collecting)
+- **Pricing**: `NEXT_PUBLIC_ASSESSMENT_PRICE` — Assessment price in ZAR (e.g., `399`)
+
+### Local Development (.env.local)
+
+For local testing, create a `.env.local` file in the project root (it's gitignored). Copy all Vercel variables and point them to local services:
+
+**Example .env.local**:
+```
+# Supabase (local Supabase CLI instance)
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Anthropic (use same key as Vercel — it's an API key)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# JWT (use same as Vercel)
+JWT_SECRET=your-32-byte-hex-key-from-vercel
+
+# App URL (local)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Admin Credentials (test values)
+ADMIN_EMAIL=test@example.com
+ADMIN_PASSWORD=testpassword
+
+# Firebase & Google OAuth (same as Vercel)
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=pathfinder-55a19
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=localhost:3000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=...
+
+# Email (optional for local testing)
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_SECURE=false
+SMTP_USER=test@example.com
+SMTP_PASS=test
+
+# PayFast (ALWAYS sandbox mode locally)
+PAYFAST_MERCHANT_ID=10000100
+PAYFAST_MERCHANT_KEY=test_key
+PAYFAST_PASSPHRASE=test_passphrase
+PAYFAST_SANDBOX=true
+
+# Pricing & Settings
+NEXT_PUBLIC_ASSESSMENT_PRICE=399
+AI_MODEL=claude-haiku-4-5-20251001
+NEXT_PUBLIC_SHOW_RATINGS=false
+```
+
+**Key differences for local**:
+- `NEXT_PUBLIC_SUPABASE_URL` points to `localhost:54321` (local Supabase)
+- `PAYFAST_SANDBOX=true` (never real payments locally)
+- `NEXT_PUBLIC_APP_URL=http://localhost:3000` (not the production domain)
+- All other API keys can be the same as Vercel (they're external services)
+
+**Important**: `.env.local` is gitignored and will never be committed to GitHub. Vercel reads its own Environment Variables, not `.env.local`.
 
 ---
 
@@ -1504,6 +1612,39 @@ function verifyPayFastSignature(data, signature) {
 
 ---
 
+## Recent Updates (July 2026)
+
+### Neurodivergence & Learning Difficulties Support — Planned
+
+**Status**: Approved for future implementation (no code changes yet)
+
+**Background**: Jo Coertzen (educational psychometrist, June 25 meeting) suggested adding questions about learning difficulties/neurodivergence (ADHD, autism, dyslexia, dyscalculia) to the assessment. Career recommendations should account for neurodivergent strengths and accommodations.
+
+**Scope**: Add optional questions to parent observations section to capture:
+1. Formal diagnoses (ADHD, autism, dyslexia, dyscalculia, other)
+2. Current accommodations provided by school (extended time, separate room, alternative formats, etc.)
+
+**Key Principles**:
+- **Optional, not mandatory** — reduce disclosure friction; many students lack formal diagnosis
+- **Strength-focused** — frame around what neurodivergent students excel at, not deficits
+- **No stereotyping** — diagnosis alone doesn't prescribe career (e.g., autism ≠ automatic STEM)
+- **Accommodations matter** — suggest careers/roles compatible with student's existing supports
+- **South African context** — use accessible language for Grade 9 audience; many haven't been formally assessed
+
+**Implementation Plan** (when ready):
+1. Add two optional questions to `lib/questions.js` Section 4 (Parent Observations):
+   - "Has your child been formally diagnosed with a learning difference?"
+   - "What accommodations does the school provide?"
+2. Update `lib/generateReport.js` AI prompt to:
+   - Highlight neurodivergent strengths aligned with careers
+   - Suggest workplace accommodations in recommendations
+   - Emphasize success stories of neurodivergent professionals
+3. Use collected data for validation against NGO partnership assessments
+
+**Data Use**: Track outcomes for neurodivergent cohort during NGO partnership validation to refine career matching accuracy.
+
+---
+
 ## Recent Updates (June 2026)
 
 ### Report Rating System
@@ -2180,6 +2321,33 @@ if (sandbox || parseFloat(totalAmount) === 0) {
 5. Should redirect immediately to `/assessment` (no PayFast)
 6. Check database: payment should be marked `completed` with `payfast_payment_id: 'FREE-COUPON-...'`
 7. Check audit_log: entry should show "Free coupon assessment granted"
+
+---
+
+### Favicon Creation — July 22, 2026
+
+**Status**: CREATED
+
+**Problem**: Google Analytics was showing frequent 404 errors for `/favicon.ico` requests, caused by missing favicon file.
+
+**Solution**: Created a professional 32×32 pixel favicon matching PickMyPath's brand colors (navy #0f1f3d background with gold #d4af37 path symbol).
+
+**Key Learning**: Favicons must be placed in the `public/` folder, not `pages/`. Next.js serves static assets from `public/` automatically.
+
+**File Created**:
+- `public/favicon.svg` — SVG favicon (32×32, navy + gold, path/upward arrow symbol)
+
+**How it works**:
+- Next.js automatically serves `public/favicon.svg` at the root as `/favicon.svg`
+- Modern browsers (Chrome, Firefox, Safari, Edge) recognize SVG favicons automatically
+- No additional configuration needed — deployed as-is
+
+**Optional**: For older browser support, convert SVG to ICO format using an online tool like CloudConvert or ImageMagick CLI: `convert public/favicon.svg public/favicon.ico`
+
+**Files Created**:
+- `public/favicon.svg` — NEW: Professional brand-colored favicon
+
+**Verification**: After deployment, Google Analytics should stop showing 404 errors for favicon requests.
 
 ---
 

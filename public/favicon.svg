@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Navy background -->
+  <rect width="32" height="32" fill="#0f1f3d"/>
+
+  <!-- Gold path indicator (stylized arrow/direction) -->
+  <path d="M 16 6 L 24 14 L 20 14 L 20 24 L 12 24 L 12 14 L 8 14 Z" fill="#d4af37"/>
+</svg>

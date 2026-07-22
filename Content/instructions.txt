@@ -1,0 +1,257 @@
+LOCAL DEVELOPMENT SETUP INSTRUCTIONS
+=====================================
+
+OVERVIEW
+--------
+This guide sets up a local development environment on WSL to test PickMyPath before pushing to GitHub/Vercel.
+Key point: Local .env.local files do NOT affect your live Vercel system — they're only read by Next.js locally.
+
+
+STEP 1: INSTALL REQUIRED TOOLS ON WSL
+======================================
+
+# 1. Node.js & npm (if not already installed)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 2. Docker (easiest way to run local Supabase/PostgreSQL)
+sudo apt-get install -y docker.io docker-compose
+
+# 3. Git (if not installed)
+sudo apt-get install -y git
+
+
+STEP 2: CHOOSE YOUR LOCAL DATABASE
+===================================
+
+RECOMMENDED: Supabase CLI (Best for production parity)
+------------------------------------------------------
+
+# Install Supabase CLI
+npm install -g supabase
+
+# In your project directory, initialize Supabase
+supabase init
+
+# Start local Supabase instance (includes PostgreSQL, Auth, Realtime, Storage)
+supabase start
+
+This gives you:
+  ✅ Full Supabase API locally (same as production)
+  ✅ Can import your supabase-schema.sql directly
+  ✅ Can test migrations without touching production
+  ✅ Admin panel to view database
+  ✅ Emulated Auth, Realtime, everything
+
+The command will print your connection details:
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - Connection string
+
+
+ALTERNATIVE: PostgreSQL via Docker (Simpler option)
+----------------------------------------------------
+
+docker run --name pickmypath-db \
+  -e POSTGRES_PASSWORD=localpassword \
+  -e POSTGRES_DB=pickmypath \
+  -p 5432:5432 \
+  -d postgres:15
+
+# To stop it later:
+docker stop pickmypath-db
+
+# To restart it:
+docker start pickmypath-db
+
+
+STEP 3: CREATE LOCAL .env.local FILE
+====================================
+
+Create a file named .env.local in your project root directory with all variables below.
+This file is already in .gitignore — it will NEVER be committed to git.
+
+---BEGIN .env.local---
+
+# Supabase (use values printed by 'supabase start' if using CLI)
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Anthropic (use same key as Vercel)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# JWT (use same as Vercel)
+JWT_SECRET=your-32-byte-hex-key-from-vercel
+
+# App URL (local)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Admin Credentials (test values)
+ADMIN_EMAIL=test@example.com
+ADMIN_PASSWORD=testpassword
+
+# Firebase & Google OAuth (same as Vercel)
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=pathfinder-55a19
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=localhost:3000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=...
+
+# Email (optional for testing — can mock in development)
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_SECURE=false
+SMTP_USER=test@example.com
+SMTP_PASS=test
+
+# PayFast (use SANDBOX mode locally — no real payments)
+PAYFAST_MERCHANT_ID=10000100
+PAYFAST_MERCHANT_KEY=test_key
+PAYFAST_PASSPHRASE=test_passphrase
+PAYFAST_SANDBOX=true
+
+# Prices & Settings
+NEXT_PUBLIC_ASSESSMENT_PRICE=399
+AI_MODEL=claude-haiku-4-5-20251001
+
+# Analytics (optional to disable locally)
+NEXT_PUBLIC_SHOW_RATINGS=false
+
+---END .env.local---
+
+NOTE: Replace the placeholder values (sk-ant-..., AIzaSy..., etc.) with actual values from Vercel.
+Get these from: https://vercel.com/dashboard → Your Project → Settings → Environment Variables
+
+
+STEP 4: IMPORT YOUR DATABASE SCHEMA (OPTIONAL)
+==============================================
+
+If using Supabase CLI:
+
+  supabase db push
+
+OR manually import your schema:
+
+  # Get your local connection string from 'supabase start' output
+  psql postgresql://postgres:postgres@localhost:54322/postgres < supabase-schema.sql
+
+
+STEP 5: START LOCAL DEVELOPMENT
+================================
+
+Terminal 1 - Start Supabase (or Docker PostgreSQL):
+  supabase start
+  # Keep this running in background
+
+Terminal 2 - Install dependencies & start Next.js:
+  npm install
+  npm run dev
+
+Terminal 3 (optional) - View database changes:
+  # Open Supabase dashboard at URL printed by 'supabase start'
+
+
+STEP 6: VERIFY LOCAL SETUP
+===========================
+
+Open browser and visit: http://localhost:3000
+
+Expected behavior:
+  ✅ Homepage loads
+  ✅ Registration page works
+  ✅ Can create test account
+  ✅ Database saves data locally (not affecting Vercel/Supabase production)
+
+
+OPTIONAL: LOCAL EMAIL TESTING
+=============================
+
+To catch emails locally without a real SMTP server, use MailHog:
+
+docker run --name mailhog -p 1025:1025 -p 8025:8025 -d mailhog/mailhog
+
+Then in .env.local, set:
+  SMTP_HOST=localhost
+  SMTP_PORT=1025
+  SMTP_SECURE=false
+
+View all captured emails at: http://localhost:8025
+
+
+TESTING WORKFLOW
+================
+
+1. Make code changes locally
+2. Test in browser at http://localhost:3000
+3. Check database via Supabase admin dashboard
+4. If satisfied, commit changes:
+   git add .
+   git commit -m "Your message"
+   git push
+5. Vercel auto-deploys from GitHub
+6. Test on live site: https://www.pickmypath.co.za
+
+
+KEY SAFETY POINTS
+=================
+
+What                   Local Environment          Vercel/Production
+------                 -----------------          ------------------
+Database               Local PostgreSQL/Supabase   Live Supabase (no changes)
+Environment variables  .env.local (gitignored)     Vercel project settings (unchanged)
+API keys               Can use same (safe)         Same in Vercel
+PayFast mode          SANDBOX (no real charges)    LIVE mode
+Auth                  Local Firebase (optional)    Live Firebase (unchanged)
+
+✅ Your local changes will NOT affect production because:
+   - .env.local is never committed to git
+   - Vercel reads only from its own Environment Variables
+   - Local database is completely separate from production Supabase
+
+
+TROUBLESHOOTING
+===============
+
+Issue: "Cannot connect to localhost:5432"
+Solution: Make sure Docker is running and PostgreSQL container started
+  docker ps  # Check if pickmypath-db container is running
+
+Issue: ".env.local not found / variables undefined"
+Solution: Make sure .env.local is in the PROJECT ROOT (not in src/ or pages/)
+
+Issue: "NEXT_PUBLIC_SUPABASE_URL is required"
+Solution: Check .env.local has correct NEXT_PUBLIC_SUPABASE_URL value from 'supabase start'
+
+Issue: "Port 3000 already in use"
+Solution: Kill the process using port 3000
+  lsof -i :3000
+  kill -9 <PID>
+
+Issue: "Can't connect to Supabase"
+Solution: Run 'supabase status' to check if Supabase is running
+  supabase status
+  supabase start  # Restart if needed
+
+
+CLEANUP (when done testing)
+============================
+
+Stop local Supabase:
+  supabase stop
+
+Stop Docker containers:
+  docker stop pickmypath-db
+
+IMPORTANT: Never commit .env.local to git
+  git status  # Should NOT show .env.local (it's in .gitignore)
+
+
+NEXT STEPS
+==========
+
+1. Run through the setup steps above
+2. Verify everything loads at http://localhost:3000
+3. Make a test change to the code (e.g., change a color in styles/globals.css)
+4. Refresh browser — should see change immediately
+5. Once confident, push to GitHub: git push
+6. Vercel will auto-deploy to live site

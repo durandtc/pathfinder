@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Flyer to PNG</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0f1f3d;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #d4af37;
+            color: #0f1f3d;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #c9a02a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            display: block;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #d32f2f;
+            display: block;
+        }
+        .flyer-preview {
+            margin: 30px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Export A5 Flyer to PNG</h1>
+        <p>Click the button below to convert your A5 flyer to a PNG image. The file will be downloaded automatically.</p>
+
+        <button id="exportBtn" onclick="exportFlyer()">
+            ⬇️ Export to PNG (A5 - 420px × 595px)
+        </button>
+
+        <div id="status" class="status"></div>
+
+        <div class="flyer-preview">
+            <h3 style="margin: 10px; color: #666;">Flyer Preview:</h3>
+            <iframe id="flyerFrame" src="a5-flyer-v5.html"></iframe>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        async function exportFlyer() {
+            const btn = document.getElementById('exportBtn');
+            btn.disabled = true;
+
+            try {
+                updateStatus('⏳ Preparing flyer...', 'loading');
+
+                // Get the iframe and wait for it to load
+                const iframe = document.getElementById('flyerFrame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                // Wait a moment for styles to apply
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const flyerElement = iframeDoc.querySelector('.flyer');
+                if (!flyerElement) {
+                    throw new Error('Flyer element not found. Make sure a5-flyer-v5.html is in the same directory.');
+                }
+
+                updateStatus('🎨 Rendering flyer...', 'loading');
+
+                const canvas = await html2canvas(flyerElement, {
+                    scale: 2, // Higher quality
+                    backgroundColor: null,
+                    allowTaint: true,
+                    useCORS: true,
+                });
+
+                updateStatus('💾 Saving PNG file...', 'loading');
+
+                // Convert canvas to blob and download
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'a5-flyer-v5.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    updateStatus('✅ PNG exported successfully! Check your Downloads folder.', 'success');
+                });
+
+            } catch (error) {
+                console.error(error);
+                updateStatus(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
