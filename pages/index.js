@@ -49,7 +49,7 @@ export default function Home() {
             </a>
           </div>
           <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginTop: '3.5rem', flexWrap: 'wrap' }}>
-            {[['45 mins', 'To clarity'], ['3', 'Career matches'], ['100%', 'Your unique profile'], ['CAPS', 'SA aligned']].map(([n, l]) => (
+            {[['45 mins', 'To clarity'], ['6', 'Career matches'], ['100%', 'Your unique profile'], ['CAPS', 'SA aligned']].map(([n, l]) => (
               <div key={l} style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Georgia,serif', fontSize: '1.8rem', color: '#c9973a', fontWeight: 700 }}>{n}</div>
                 <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 2 }}>{l}</div>
@@ -63,7 +63,7 @@ export default function Home() {
       <section style={{ padding: '5rem 2rem', maxWidth: 1000, margin: '0 auto' }}>
         <div style={{ fontSize: '0.75rem', color: 'var(--gold)', fontWeight: 500, letterSpacing: 2, textTransform: 'uppercase', marginBottom: '0.75rem' }}>Built for every stage</div>
         <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(1.8rem,4vw,2.4rem)', color: 'var(--navy)', marginBottom: '1rem' }}>Grade 9 is where the action is. But every year matters.</h2>
-        <p style={{ color: 'var(--text-mid)', maxWidth: 620, fontWeight: 300, marginBottom: '3rem', lineHeight: 1.7 }}>Subject choices at Grade 9 are irreversible. But Grade 8 is the time to discover yourself. And Grades 10–12 need confirmation you're still on the right path.</p>
+        <p style={{ color: 'var(--text-mid)', maxWidth: 620, fontWeight: 300, marginBottom: '3rem', lineHeight: 1.7 }}>Grade 8: Discover who you are. Grade 9: Make informed subject choices. Grades 10–12: Confirm you're on the path that's right for you.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
           {[
             ['🔍', 'Grade 8', 'Get ahead. Discover your strengths before the pressure hits. Know what you\'re good at before you have to choose.'],
@@ -116,7 +116,7 @@ export default function Home() {
               ['1️⃣', 'Student takes the assessment', '20 minutes. 45+ honest questions about what they love, what they\'re good at, what matters to them.'],
               ['2️⃣', 'Parent adds the marks', '10 minutes. You enter their term marks across subjects. This is the data that reveals their real potential.'],
               ['3️⃣', 'AI connects the dots', 'Instant. Claude analyzes interests + aptitude + values + actual performance. Finds real career matches.'],
-              ['4️⃣', 'You get the report', 'Personalized, printable, actionable. Top 3 careers. The subjects that lead there. What to do next.'],
+              ['4️⃣', 'You get the report', 'Personalized, printable, actionable. Top 6 career matches. The subjects that lead there. Alternative paths to explore. What to do next.'],
             ].map(([icon, t, d]) => (
               <div key={t} style={{ background: 'var(--white)', borderRadius: 12, padding: '1.75rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>{icon}</div>
@@ -144,7 +144,8 @@ export default function Home() {
           </div>
           <ul style={{ listStyle: 'none', textAlign: 'left', marginBottom: '2rem' }}>
             {[
-              'Your child\'s top 3 career matches',
+              'Your child\'s top 6 career matches',
+              'Alternative career paths to explore',
               'Exact subjects to choose (and why)',
               'What their school marks reveal',
               'Realistic NSC targets',

@@ -2625,6 +2625,39 @@ Once we have written confirmation, use in pitch:
 
 ---
 
+### Homepage Updates — Career Matches & Stage Messaging — July 23, 2026
+
+**Status**: ✅ COMPLETE
+
+**Changes**: Updated homepage (`pages/index.js`) to reflect expanded career recommendations (3 → 6) and refreshed stage-based messaging.
+
+**Updates Made**:
+
+1. **Hero section stat (line 52)**: Changed "3 Career matches" → "6 Career matches"
+
+2. **"BUILT FOR EVERY STAGE" section (line 66)**:
+   - **Before**: "Subject choices at Grade 9 are irreversible. But Grade 8 is the time to discover yourself. And Grades 10–12 need confirmation you're still on the right path."
+   - **After**: "Grade 8: Discover who you are. Grade 9: Make informed subject choices. Grades 10–12: Confirm you're on the path that's right for you."
+
+3. **"How it works" section (line 119)**: Updated step 4 description
+   - **Before**: "Top 3 careers. The subjects that lead there. What to do next."
+   - **After**: "Top 6 career matches. The subjects that lead there. Alternative paths to explore. What to do next."
+
+4. **Pricing checklist (line 147)**:
+   - Added: "Alternative career paths to explore" 
+   - Changed: "Your child's top 3 career matches" → "Your child's top 6 career matches"
+
+**Files Modified**:
+- `pages/index.js` (lines 52, 66, 119, 147)
+
+**Impact**:
+- Homepage now accurately reflects product (6 career matches, not 3)
+- Stage-based messaging is punchier and more actionable
+- Pricing section highlights expanded career exploration feature
+- Consistent messaging across all sections
+
+---
+
 ### Next Steps (Post-July 23)
 
 1. **Find SA IP lawyer** — target mid-August 2026
