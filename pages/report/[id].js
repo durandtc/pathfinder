@@ -13,9 +13,9 @@ const PRINT_STYLES = `
     body { margin: 0; padding: 0; background: #fff; }
     html { margin: 0; padding: 0; }
     nav, .action-buttons { display: none !important; height: 0 !important; overflow: hidden !important; }
-    .report-header { page-break-after: avoid; margin: 0 0 0.8rem 0 !important; padding: 0.8rem 0.6rem !important; }
-    .report-header h1 { color: #000 !important; margin-bottom: 0.08rem !important; font-size: 1.1rem !important; }
-    .report-header p { color: #333 !important; margin-bottom: 0.1rem !important; font-size: 0.65rem !important; }
+    .report-header { page-break-after: avoid; margin: 0 0 0.8rem 0 !important; padding: 0.8rem 0.6rem !important; background: #0f1f3d !important; }
+    .report-header h1 { color: #ffffff !important; margin-bottom: 0.08rem !important; font-size: 1.1rem !important; }
+    .report-header p { color: #ffffff !important; margin-bottom: 0.1rem !important; font-size: 0.65rem !important; }
     .report-header hr { border-top-color: #ccc !important; margin: 0.2rem 0 !important; }
     .report-header div:first-of-type { margin-bottom: 0.4rem !important; }
     .career-card { page-break-inside: auto !important; break-inside: auto !important; margin-bottom: 0.4rem !important; }
@@ -326,6 +326,22 @@ export default function ReportPage() {
             </div>
           </div>
         ))}
+
+        {/* Other careers matching your RIASEC profile */}
+        {rd?.other_careers_intro && (
+          <div style={{ background: '#f5f5f5', borderRadius: 12, padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #ddd', pageBreakInside: 'avoid' }} className="print-no-break">
+            <h3 style={{ fontFamily: 'Georgia,serif', color: 'var(--navy)', marginBottom: '1rem', fontSize: '1.05rem' }}>
+              💡 Other careers that match your profile
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-mid)', marginBottom: '0.75rem', lineHeight: 1.6 }}>
+              Your RIASEC profile ({riasec?.dominant_types?.join(' · ')}) aligns with many careers beyond the top 6. Here are more options worth exploring:
+            </p>
+            <MarkdownContent>{rd.other_careers_intro}</MarkdownContent>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginTop: '1rem', fontStyle: 'italic' }}>
+              💭 <strong>Not sure?</strong> Talk to your school counselor, shadow someone in any of these roles, or explore career sites like <strong>O*Net Online</strong>, <strong>Truity</strong>, or <strong>Indeed</strong> to learn more.
+            </p>
+          </div>
+        )}
 
         {/* Subject / next steps advice — label changes by stage */}
         {rd?.subject_or_next_steps_advice && (

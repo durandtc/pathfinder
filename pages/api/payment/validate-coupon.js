@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     .single()
 
   if (!coupon) {
-    return res.status(400).json({ error: 'Invalid or inactive coupon code' })
+    return res.status(400).json({ error: 'The coupon code you entered is no longer valid or has expired' })
   }
 
   // Check if coupon has available uses
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       .eq('status', 'completed')
 
     if (usedCount >= coupon.code_number) {
-      return res.status(400).json({ error: 'This coupon code has reached its usage limit' })
+      return res.status(400).json({ error: 'This coupon code has reached its maximum number of uses. Please try another code.' })
     }
   }
 

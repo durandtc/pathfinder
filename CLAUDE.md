@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**PickMyPath** is a Next.js-based career guidance platform for South African Grade 9 students. The app combines AI-powered assessment (via Anthropic Claude) with a multi-stage user flow: registration → email verification → payment → 45-question assessment → AI-generated career report.
+**PickMyPath** is a Next.js-based career guidance platform for South African Grade 8–12 students. The app combines AI-powered assessment (via Anthropic Claude) with a multi-stage user flow: registration → email verification → payment → 55-question assessment (49 original + 6 rephrased for consistency check) → AI-generated 6-career report.
 
 ---
 
@@ -2348,6 +2348,292 @@ if (sandbox || parseFloat(totalAmount) === 0) {
 - `public/favicon.svg` — NEW: Professional brand-colored favicon
 
 **Verification**: After deployment, Google Analytics should stop showing 404 errors for favicon requests.
+
+---
+
+### Aggressive Email Campaign to Western Cape Schools — July 22, 2026
+
+**Status**: Campaign launching now
+
+**Strategy**: Direct outreach to high schools across Western Cape province targeting Grade 9 guidance departments. Focus on the affordability problem: not all families can afford educational psychologists (R800–1500 per session). Position PickMyPath as an accessible alternative.
+
+#### Campaign Structure
+
+**Sequence 1 (Initial Outreach)**: Hook email — brief, problem-focused, includes promo code
+- Subject: "Affordable Career Guidance for Your Grade 9s"
+- Body: ~150 words, opens with cost barrier, explains product value, includes promo code, links to sample report
+- CTA: Subtle (no "partnership" language) — just try it, no commitment
+- Promo code: `WC50PILOT` (first 50 users globally, 50% off = R199.50)
+
+**Email Template** (customizable fields):
+```
+Hi [Contact Name],
+
+Most Grade 9 students need help with subject choice, but not all families can afford an educational psychologist (R800–1500 per session).
+
+I've built PickMyPath — an affordable alternative. Students complete a 45-question assessment and get a personalized career report with:
+- Top 3 career matches
+- Day-in-the-life descriptions of each career
+- Salary ranges and career progression
+- Subject-specific guidance for their interests
+- Next steps for exploration
+
+All for R199.50 (normally R399).
+
+Limited offer: First 50 students get 50% off using code WC50PILOT.
+
+No commitment required — just a tool to help students make better subject choices.
+
+You can see a sample report here: [pickmypath.co.za]
+
+Best,
+Calvin du Randt
+PickMyPath
+calvin.du.randt@gmail.com
+pickmypath.co.za
+```
+
+#### Promo Code Setup
+
+**Code**: `WC50PILOT`
+- **Discount**: 50% off (R199.50 discount on R399 assessment)
+- **Usage limit**: 50 uses (creates urgency — "first 50 users")
+- **Status**: Active
+- **Tracking**: Use Excel spreadsheet to track which schools responded, opened, clicked, converted
+
+**SQL to create**:
+```sql
+INSERT INTO coupons (school, code, discount_amount, code_number, is_active)
+VALUES ('Western Cape Campaign', 'WC50PILOT', 199.50, 50, true);
+```
+
+#### Execution Approach
+
+1. **Email list building**: Use Google Maps to locate high schools in Western Cape, visit school websites to extract contact emails (usually listed for principal/deputy head)
+2. **Personalization**: Fill in `[Contact Name]` and send to deputy head responsible for guidance or academics (increases response rate)
+3. **Tracking**: Excel sheet with columns: School Name | Contact Email | Contact Person | Website | Date Sent | Status (Not Contacted / Sent / Opened / Replied / Converted)
+4. **Follow-up**: If no response in 5–7 days, consider one light follow-up email (not pushy)
+5. **Analytics**: Use Google Analytics to track clicks from emails; monitor conversion funnel from email → payment
+
+#### Key Messaging
+
+- **Problem**: Cost barrier to professional career guidance
+- **Solution**: Affordable alternative (R199.50) with professional-grade frameworks
+- **Proof**: Sample report (concrete, visual)
+- **Urgency**: First 50 users only (scarcity)
+- **Friction**: Zero — no partnership requirements, no school commitment, students just try it
+
+#### Expected Outcomes
+
+- **Conservative estimate**: 5–10% response rate on cold outreach (50–100 replies from 1000 schools)
+- **Conversion target**: 2–5% of responses convert to paid assessments
+- **Quick wins**: If 10 schools each have 5 Grade 9s try the product, that's 50 users consuming the promo code budget
+
+#### Files Modified
+- None (campaign is email-only, no code changes)
+- Existing coupon system (`coupons` table) supports the `WC50PILOT` code
+
+#### Notes
+
+- This is purely outbound email — no ads, no partnerships, just direct contact
+- Focus on **affordability** angle (differentiator from professional psychometrist services)
+- Sample report link is critical — people need to see the value before buying
+- Promo code creates time pressure without being pushy
+
+---
+
+## Recent Updates (July 23, 2026)
+
+### Comprehensive Psychometrist Feedback Implementation — Jo Coertzen Review
+
+**Status**: COMPLETE — All feedback implemented and tested
+
+#### Background
+
+Jo Coertzen (Educational Psychologist with Honours degree, extensive industry experience) provided detailed feedback on assessment methodology, report accuracy, and best practices. Her input was invaluable for improving PickMyPath before school rollout.
+
+#### Implementation Summary
+
+**1. Question Methodology Improvements** (`lib/questions.js`)
+- **Before**: 49 questions grouped by category (all Realistic together, all Investigative, etc.)
+- **Issue**: Responders could detect pattern and answer based on expected profile rather than genuine self-reflection
+- **Solution**: 
+  - Added 6 new **rephrased questions** (one per RIASEC type) for internal consistency checking
+    - R: "Working with my hands to create or repair things is something I naturally gravitate toward"
+    - I: "I find myself constantly curious about understanding why things work the way they do"
+    - A: "Expressing my creativity and original ideas through a project is deeply satisfying to me"
+    - S: "I want to be in a career where I work directly with and help people"
+    - E: "Taking initiative and being in charge of a project or team energizes me"
+    - C: "I like having clear structure and knowing precisely what is expected of me"
+  - Shuffled all 21 RIASEC questions globally (not grouped by type)
+  - **Result**: 55 questions total, intermixed to prevent pattern detection
+  - **Benefit**: Improved internal reliability — if someone answers high on both original and rephrased versions of the same RIASEC type, they genuinely have that trait
+
+**2. Career Expansion & RIASEC Matching** (`lib/careerDatabase.js` + `lib/generateReport.js`)
+- **Before**: 3 career recommendations per student
+- **Issue**: Jo's example — she was told "become a doctor" but hates hospitals, rejected entire health field
+- **Solution**:
+  - Created `lib/careerDatabase.js` — comprehensive career database with 20+ RIASEC code combinations
+  - Expanded AI to generate **6 career recommendations** (ranks 1–6 with decreasing match %)
+  - Added "other careers" section showing 5–6 additional careers matching user's RIASEC code
+  - **Result**: User now sees 6 primary options + 5–6 secondary options = 11–12 total career paths
+  - **Benefit**: Reduced tunnel vision; if user doesn't resonate with top 6, they have alternatives
+
+**3. Compulsory Subjects Guidance** (`lib/generateReport.js`)
+- **Before**: Subject recommendations missed FAL (First Additional Language) and Life Orientation
+- **Issue**: Students could overlook mandatory subjects; didn't know Life Orientation doesn't count toward APS score
+- **Solution**:
+  - Updated AI prompt to always include FAL and Life Orientation in `subjects_required`
+  - Added note in `subjects_recommended`: "Life Orientation is compulsory but does NOT count toward your APS score"
+  - Enhanced subject advice section to explicitly mention FAL + Life Orientation for all 6 careers
+  - **Result**: Clear guidance on compulsory vs optional, and APS impact
+  - **Benefit**: Students make informed subject choices; parents understand NSC requirements
+
+**4. Psychology Qualification Pathway Accuracy** (`lib/generateReport.js`)
+- **Before**: AI sometimes said Master's was optional ("Optional: Master's 2 years for advanced specialisation")
+- **Issue**: Completely wrong — Master's is MANDATORY for Educational Psychologist and Counselling Psychologist
+- **Solution**:
+  - Added explicit instruction in AI prompt:
+    ```
+    For psychology careers:
+    - Pathway is: 3-year undergrad → Honours → Master's (MANDATORY, not optional) → 1-year internship → Board exam → HPCSA registration
+    - Master's is REQUIRED and cannot be skipped
+    - For Ed Psych: include therapy/psychotherapy work with children, teens, AND adults
+    - For Counselling Psych: don't reference Clinical Psychology resources
+    ```
+  - **Result**: Accurate pathway for all psychology careers
+  - **Benefit**: Students understand true commitment required; no false expectations
+
+**5. Print Readability Fix** (`pages/report/[id].js` PRINT_STYLES)
+- **Before**: Report header text was beige/gold on navy background — unreadable when printed to PDF
+- **Issue**: Users downloading/printing report couldn't read student name, headline, rationale
+- **Solution**:
+  - Updated print styles to set all header paragraph text to white (#ffffff)
+  - Ensured navy background renders correctly on print
+  - **Result**: Crystal clear white text on navy when printed
+  - **Benefit**: Professional PDF output; users can share with parents/counselors
+
+**6. Career Expansion Section** (`pages/report/[id].js`)
+- **Before**: Report ended with main 6 careers and subject advice
+- **Solution**:
+  - Added new section: "💡 Other careers that match your profile"
+  - Shows RIASEC code (e.g., "Investigative · Realistic · Enterprising")
+  - Lists 5–6 additional careers with brief descriptions
+  - Includes helpful footer: "Talk to your school counselor, shadow someone, or explore O*Net Online / Truity / Indeed"
+  - **Benefit**: Empowers users to explore beyond top 6; reduces regret/tunnel vision
+
+#### Files Modified
+
+| File | Changes |
+|------|---------|
+| `lib/questions.js` | Added 6 rephrased RIASEC questions; shuffled all 21 RIASEC questions globally; total now 55 (was 49) |
+| `lib/careerDatabase.js` | NEW: RIASEC-to-career mappings (20+ codes, 3+ careers per code) |
+| `lib/generateReport.js` | Updated AI prompt: 6 careers, compulsory subjects, psychology pathway fix, "other careers" field |
+| `pages/report/[id].js` | Fixed print colors (white text); added "other careers" section with RIASEC context |
+
+#### Impact on Assessment Quality
+
+**Internal Consistency**: Rephrased questions now measure reliability — if someone scores high on both "I enjoy working with my hands" and "Working with my hands...is something I naturally gravitate toward," it's genuine Realistic interest, not pattern-matching.
+
+**Career Matching**: 6 recommendations + 5–6 alternatives = 11–12 options per student. Dramatically reduces "I don't see myself in any of these" scenarios.
+
+**Accuracy**: Psychology pathways, subject requirements, and FET phase subjects (Grades 10–12) now verified correct by professional psychometrist.
+
+**User Experience**: Clear, readable PDFs; complete guidance on compulsory requirements; empowering choice exploration.
+
+---
+
+### Legal Review Process — IP/Copyright Due Diligence
+
+**Status**: PREPARATION PHASE — Lawyer review pending
+
+**Why**: Jo Coertzen raised concern: "Are you using existing RIASEC tests like SDS or SAVII? Could there be copyright issues?"
+
+**Decision**: Get South African IP lawyer review before broader school rollout. Better safe than sued.
+
+#### What We're Claiming vs What We're Actually Doing
+
+| Claim | Implementation | Risk |
+|-------|----------------|------|
+| "Career guidance tool" (not professional assessment) | AI-generated report for exploration only | ✅ Low |
+| "Research-backed frameworks" (RIASEC) | Holland's 1966 framework (likely public domain) | ✅ Low |
+| "Original questions" (not SDS/SAVII) | All 55 questions written originally, not copied | ✅ Low |
+| "AI-powered content" | Claude API; disclosed in Privacy Policy | ✅ Low |
+| Accurate subject/pathway info | Verified by professional psychometrist | ✅ Low |
+
+**Risk Assessment**: Low–Medium overall. Primary risks are disclaimer strength and data handling compliance (POPIA).
+
+#### Lawyer Review Scope
+
+**File**: `LAWYER_REVIEW_PACKAGE.md` (created July 23, 2026)
+
+Comprehensive brief for SA IP lawyer covering:
+1. Assessment questions — are they original?
+2. AI prompt — are we claiming professional assessment?
+3. Career database — independently sourced?
+4. Disclaimers — strong enough to protect us?
+5. Data handling — POPIA-compliant?
+6. Professional liability — who's responsible if Claude gives bad advice?
+
+**Expected Outcome**: Written confirmation that we're low-risk, no SDS/SAVII copyright infringement.
+
+**Timeline**: 
+- Week 1: Find lawyer, schedule consultation
+- Week 2: Provide files, answer questions
+- Week 3: Lawyer reviews
+- Week 4: Make any required changes
+- Week 5: Ready for school rollout with lawyer letter
+
+**Budget**: R6,000–10,000 ZAR for full review
+
+#### Using Lawyer Approval in School Proposals
+
+Once we have written confirmation, use in pitch:
+
+> "PickMyPath has been reviewed by a South African intellectual property lawyer for compliance with RIASEC framework usage, data protection, and professional liability standards. The assessment uses original questions based on Holland's public-domain framework (not the SDS or SAVII) and is explicitly positioned as a career exploration tool, not a professional assessment."
+
+**This shows schools**:
+- ✅ Professional due diligence
+- ✅ Legal compliance
+- ✅ Clear about what we're claiming
+- ✅ Risk management (they know we've thought about liability)
+
+---
+
+### Coupon Error Message UX Improvements — July 23, 2026
+
+**Status**: ✅ COMPLETE
+
+**Changes**: Updated coupon validation error messages in `pages/api/payment/validate-coupon.js` for better user experience.
+
+**Before**:
+- "Invalid or inactive coupon code" — generic, unclear
+- "This coupon code has reached its usage limit" — technical
+
+**After**:
+- "The coupon code you entered is no longer valid or has expired" — friendly, contextual
+- "This coupon code has reached its maximum number of uses. Please try another code." — helpful, actionable
+
+**Files Modified**:
+- `pages/api/payment/validate-coupon.js` (lines 20, 33)
+
+**Benefits**:
+- More empathetic tone (acknowledges user action: "you entered")
+- Clearer explanation (expired vs reached limit)
+- Helpful guidance ("try another code")
+- Consistent friendly messaging across error states
+
+---
+
+### Next Steps (Post-July 23)
+
+1. **Find SA IP lawyer** — target mid-August 2026
+2. **Provide lawyer with review package** — LAWYER_REVIEW_PACKAGE.md + repo files
+3. **Wait for written opinion** — 2–3 weeks
+4. **Make any required changes** — disclaimer strengthening, data handling, etc.
+5. **Use lawyer letter in school proposals** — major credibility asset
+6. **Get professional liability insurance** — R1,000–2,000/month (recommended)
+7. **Begin school rollout** — September 2026 onwards
 
 ---
 
