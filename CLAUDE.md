@@ -2625,6 +2625,24 @@ Once we have written confirmation, use in pitch:
 
 ---
 
+### Removed [CONSISTENCY] Tags from Questions — July 23, 2026
+
+**Status**: ✅ COMPLETE
+
+**Problem**: The 6 rephrased RIASEC questions had `[CONSISTENCY]` tags at the end (e.g., "Working with my hands...is something I naturally gravitate toward. [CONSISTENCY]"), which were visible to users during the assessment.
+
+**Why this happened**: Internal markers meant for developers/data analysis were accidentally exposed to users.
+
+**Fix**: Removed all 6 `[CONSISTENCY]` tags from question text while keeping the questions as internal consistency checks.
+
+**Files Modified**:
+- `lib/questions.js` (lines 60-65): Removed `[CONSISTENCY]` suffix from each rephrased question
+- `lib/questions.js` (line 43): Updated comment to reflect tags are removed but questions still serve consistency-check purpose
+
+**Result**: Assessment now displays clean question text to users. Questions still function as consistency checks for internal data analysis.
+
+---
+
 ### Homepage Updates — Career Matches & Stage Messaging — July 23, 2026
 
 **Status**: ✅ COMPLETE
@@ -2655,6 +2673,48 @@ Once we have written confirmation, use in pitch:
 - Stage-based messaging is punchier and more actionable
 - Pricing section highlights expanded career exploration feature
 - Consistent messaging across all sections
+
+---
+
+### Bulk Report Export Feature — July 23, 2026
+
+**Status**: ✅ IMPLEMENTED
+
+**Purpose**: Export assessment reports for multiple students as individual PDF files in a ZIP archive.
+
+**Use case**: Non-profit pilot tested system with 11 students; needed to export reports for their contact.
+
+**Implementation**:
+- **Endpoint**: `POST /api/export-reports`
+- **Security**: Token-based auth via `x-export-token` header
+- **Input**: Array of report IDs + format (`"zip"`)
+- **Output**: ZIP file with individual PDFs named `StudentName_ReportID.pdf`
+- **No admin portal**: Completely separate from admin system (kept minimal)
+
+**Files**:
+- `pages/api/export-reports.js` — API endpoint using puppeteer for PDF generation
+- `BULK_REPORT_EXPORT_GUIDE.md` — Comprehensive setup and usage guide
+- Environment variable: `REPORT_EXPORT_TOKEN` (Vercel only)
+
+**Dependencies added**:
+- `puppeteer` — Headless Chrome for PDF rendering
+- `archiver` — ZIP file creation
+
+**Security features**:
+- Token-based authentication (secret key required)
+- HTTPS only
+- Read-only (no database modifications)
+- Rate-limited (max 100 reports per request)
+- No integration with admin portal
+
+**Setup**:
+1. Run `npm install puppeteer archiver`
+2. Add `REPORT_EXPORT_TOKEN` to Vercel env vars
+3. Push to GitHub; Vercel deploys automatically
+
+**Usage**: Query report IDs from Supabase, then call endpoint with token + IDs → download ZIP.
+
+See `BULK_REPORT_EXPORT_GUIDE.md` for detailed setup and usage instructions.
 
 ---
 
