@@ -53,7 +53,10 @@ export default async function handler(req, res) {
     users?.forEach(u => { userMap[u.id] = u })
 
     // Launch browser for PDF generation
-    const browser = await puppeteer.launch({ headless: 'new' })
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/tmp/puppeteer/chrome/linux-152.0.7977.42/chrome-linux64/chrome'
+    })
 
     if (format === 'zip') {
       // Return ZIP file with multiple PDFs
